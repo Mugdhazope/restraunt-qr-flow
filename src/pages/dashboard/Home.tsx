@@ -1,5 +1,6 @@
 import { dashboardStats } from "@/data/mockData";
-import { Users, Flame, MessageCircle, Smartphone } from "lucide-react";
+import { Users, Flame, MessageCircle, Smartphone, Send, Gift, MessageSquare, Download } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const stats = [
   { label: "Total Customers", value: dashboardStats.totalCustomers, icon: Users, emoji: "🍕", color: "text-primary" },
@@ -8,7 +9,16 @@ const stats = [
   { label: "WhatsApp Reach", value: `${dashboardStats.whatsappReach}%`, icon: Smartphone, emoji: "📲", color: "text-secondary" },
 ];
 
+const quickActions = [
+  { label: "Send Broadcast", icon: Send, path: "/dashboard/campaigns" },
+  { label: "Create Reward", icon: Gift, path: "/dashboard/rewards" },
+  { label: "View Feedback", icon: MessageSquare, path: "/dashboard/feedback" },
+  { label: "Export Customers", icon: Download, path: "/dashboard/customers" },
+];
+
 const DashboardHome = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-8">
       {/* Hero */}
@@ -39,12 +49,14 @@ const DashboardHome = () => {
       <div className="bg-card rounded-3xl shadow-card p-6 animate-fade-in" style={{ animationDelay: "0.4s" }}>
         <h2 className="text-lg font-bold text-foreground mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
-          {["Send Broadcast", "Create Reward", "View Feedback", "Export Customers"].map((action) => (
+          {quickActions.map((action) => (
             <button
-              key={action}
-              className="px-5 py-2.5 bg-primary/5 text-foreground font-semibold rounded-full border border-primary/10 hover:bg-primary hover:text-primary-foreground transition-all duration-200 text-sm"
+              key={action.label}
+              onClick={() => navigate(action.path)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary/5 text-foreground font-semibold rounded-full border border-primary/10 hover:bg-primary hover:text-primary-foreground transition-all duration-200 text-sm"
             >
-              {action}
+              <action.icon size={16} />
+              {action.label}
             </button>
           ))}
         </div>
