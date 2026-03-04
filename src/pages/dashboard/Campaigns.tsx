@@ -1,117 +1,146 @@
 import { useState } from "react";
+import { campaignStats } from "@/data/mockData";
 import { toast } from "@/hooks/use-toast";
+import { Plus, Send } from "lucide-react";
 
-const audiences = ["All Customers", "Repeat Customers", "Last 7 Days Visitors", "VIP Only", "Inactive 14+ Days"];
-
+const audiences = ["All Customers", "Frequent Visitors", "VIP Only", "Inactive 14+ Days"];
 const audienceCounts: Record<string, number> = {
   "All Customers": 842,
-  "Repeat Customers": 320,
-  "Last 7 Days Visitors": 156,
+  "Frequent Visitors": 320,
   "VIP Only": 89,
   "Inactive 14+ Days": 64,
 };
 
 const Campaigns = () => {
   const [selectedAudience, setSelectedAudience] = useState("All Customers");
-  const [message, setMessage] = useState("Hey 👋 Weekend special is live! 🍕\nShow this message for 10% off your next order!");
+  const [message, setMessage] = useState("Hi! Weekend special is live 🍕\nShow this message for 10% off your next order.");
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
 
   const handleSend = () => {
     setSending(true);
     setTimeout(() => {
       setSending(false);
-      setSent(true);
-      toast({
-        title: "Campaign Sent! 📢",
-        description: `Message sent to ${audienceCounts[selectedAudience]} customers in "${selectedAudience}"`,
-      });
-      setTimeout(() => setSent(false), 3000);
+      setShowBuilder(false);
+      toast({ title: "Campaign sent", description: `Message sent to ${audienceCounts[selectedAudience]} customers` });
     }, 1500);
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-extrabold text-foreground animate-fade-in">Broadcast Campaign</h1>
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left: Audience */}
-        <div className="bg-card rounded-3xl shadow-card p-6 lg:w-80 flex-shrink-0 animate-fade-in">
-          <h2 className="font-bold text-foreground mb-4">Select Audience</h2>
-          <div className="space-y-2">
-            {audiences.map((a) => (
-              <button
-                key={a}
-                onClick={() => setSelectedAudience(a)}
-                className={`w-full text-left px-4 py-3 rounded-2xl text-sm font-semibold transition-all flex justify-between items-center ${
-                  selectedAudience === a
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 text-foreground hover:bg-primary/10"
-                }`}
-              >
-                {a}
-                <span className={`text-xs ${selectedAudience === a ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                  {audienceCounts[a]}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Message editor */}
-          <h2 className="font-bold text-foreground mb-2 mt-6">Edit Message</h2>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-            className="w-full bg-background border border-border rounded-2xl p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-          />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between animate-fade-in">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">WhatsApp Campaigns</h1>
+          <p className="text-muted-foreground text-sm">Send targeted broadcasts to your customers</p>
         </div>
+        <button
+          onClick={() => setShowBuilder(true)}
+          className="flex items-center gap-2 bg-foreground text-background px-4 py-2 rounded-lg text-sm font-medium hover:bg-foreground/90 transition-colors"
+        >
+          <Plus size={16} />
+          New Campaign
+        </button>
+      </div>
 
-        {/* Right: Preview */}
-        <div className="flex-1 bg-card rounded-3xl shadow-card p-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <h2 className="font-bold text-foreground mb-4">WhatsApp Preview</h2>
-
-          <div className="bg-background rounded-3xl border-2 border-border p-4 max-w-sm mx-auto">
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">🍕</div>
-              <div>
-                <p className="font-bold text-foreground text-sm">Dough & Joe</p>
-                <p className="text-muted-foreground text-[10px]">Business</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3 text-sm text-foreground max-w-[85%] whitespace-pre-line">
-                {message}
-              </div>
-              <div className="flex gap-2 max-w-[85%]">
-                <button className="flex-1 px-3 py-2 bg-secondary/10 border border-secondary/20 rounded-xl text-xs font-semibold text-secondary">
-                  🎉 Claim Now
-                </button>
-                <button className="flex-1 px-3 py-2 bg-muted border border-border rounded-xl text-xs font-semibold text-muted-foreground">
-                  Later
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-center text-muted-foreground text-xs mt-4">
-            Sending to: <span className="font-semibold text-foreground">{selectedAudience}</span> ({audienceCounts[selectedAudience]} customers)
-          </p>
-
-          <button
-            onClick={handleSend}
-            disabled={sending || sent}
-            className={`w-full mt-6 font-bold py-4 rounded-full text-lg transition-all duration-200 ${
-              sent
-                ? "bg-green-500 text-white"
-                : "bg-primary text-primary-foreground hover:shadow-glow hover:scale-[1.02] active:scale-[0.98]"
-            } disabled:opacity-80`}
-          >
-            {sending ? "Sending..." : sent ? "✅ Sent!" : "Send Campaign 📢"}
-          </button>
+      {/* Past campaigns */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden animate-fade-in">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                {["Campaign", "Audience", "Sent", "Delivered", "Opened", "Responses", "Date", "Status"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {campaignStats.map((c) => (
+                <tr key={c.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{c.audience}</td>
+                  <td className="px-4 py-3 text-foreground">{c.sent}</td>
+                  <td className="px-4 py-3 text-foreground">{c.delivered}</td>
+                  <td className="px-4 py-3 text-foreground">{c.opened}</td>
+                  <td className="px-4 py-3 text-foreground">{c.responses}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{c.date}</td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success">{c.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      {/* Campaign builder modal */}
+      {showBuilder && (
+        <div className="fixed inset-0 bg-foreground/10 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <h2 className="font-bold text-foreground">Create Campaign</h2>
+              <button onClick={() => setShowBuilder(false)} className="text-muted-foreground hover:text-foreground text-sm">Cancel</button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Audience */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Target Audience</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {audiences.map((a) => (
+                    <button
+                      key={a}
+                      onClick={() => setSelectedAudience(a)}
+                      className={`text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors border ${
+                        selectedAudience === a
+                          ? "border-primary bg-primary/5 text-foreground"
+                          : "border-border text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <p>{a}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{audienceCounts[a]} customers</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Message</label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  className="w-full bg-background border border-border rounded-lg p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                />
+              </div>
+
+              {/* Preview */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">WhatsApp Preview</label>
+                <div className="bg-muted/50 rounded-xl p-4 max-w-xs border border-border">
+                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+                    <div className="w-7 h-7 rounded-full bg-success/10 flex items-center justify-center text-success text-xs font-bold">DJ</div>
+                    <p className="font-medium text-foreground text-sm">Dough & Joe</p>
+                  </div>
+                  <div className="bg-card rounded-lg px-3 py-2.5 text-sm text-foreground whitespace-pre-line">
+                    {message}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSend}
+                disabled={sending}
+                className="w-full flex items-center justify-center gap-2 bg-foreground text-background py-3 rounded-lg font-medium text-sm hover:bg-foreground/90 transition-colors disabled:opacity-50"
+              >
+                <Send size={16} />
+                {sending ? "Sending..." : `Send to ${audienceCounts[selectedAudience]} customers`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

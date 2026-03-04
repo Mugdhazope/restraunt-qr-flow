@@ -27,12 +27,14 @@ const OTP = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background checker-bg flex flex-col items-center justify-center p-4">
-      <div className="bg-card rounded-3xl shadow-card p-8 max-w-sm w-full animate-scale-in text-center">
-        <h2 className="text-2xl font-extrabold text-foreground mb-2">Almost there 👋</h2>
-        <p className="text-muted-foreground text-sm mb-8">Enter the 4-digit code we sent you</p>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-sm space-y-8 animate-fade-in text-center">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Verify your number</h1>
+          <p className="text-muted-foreground text-sm mt-1.5">Enter the 4-digit code we sent you</p>
+        </div>
 
-        <div className="flex justify-center gap-4 mb-8">
+        <div className="flex justify-center gap-3">
           {otp.map((digit, i) => (
             <input
               key={i}
@@ -43,24 +45,28 @@ const OTP = () => {
               value={digit}
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
-              className="w-16 h-16 rounded-full bg-background border-2 border-border text-center text-2xl font-bold text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              className="w-14 h-14 rounded-lg bg-card border border-border text-center text-xl font-semibold text-foreground focus:border-foreground focus:ring-1 focus:ring-ring outline-none transition-all"
             />
           ))}
         </div>
 
         <button
           onClick={handleSubmit}
-          disabled={loading}
-          className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-full text-lg hover:shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70"
+          disabled={loading || otp.some((d) => !d)}
+          className="w-full bg-foreground text-background font-medium py-3 rounded-lg text-sm hover:bg-foreground/90 transition-colors disabled:opacity-50"
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
-              <span className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              <span className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
               Verifying...
             </span>
           ) : (
-            "Unlock Now 🔓"
+            "Verify"
           )}
+        </button>
+
+        <button className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+          Resend code
         </button>
       </div>
     </div>
