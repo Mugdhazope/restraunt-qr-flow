@@ -13,16 +13,22 @@ const audienceCounts: Record<string, number> = {
 
 const Campaigns = () => {
   const [selectedAudience, setSelectedAudience] = useState("All Customers");
+  const [campaignName, setCampaignName] = useState("");
   const [message, setMessage] = useState("Hi! Weekend special is live 🍕\nShow this message for 10% off your next order.");
   const [sending, setSending] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
 
   const handleSend = () => {
+    if (!campaignName.trim()) {
+      toast({ title: "Please enter a campaign name", variant: "destructive" });
+      return;
+    }
     setSending(true);
     setTimeout(() => {
       setSending(false);
       setShowBuilder(false);
-      toast({ title: "Campaign sent", description: `Message sent to ${audienceCounts[selectedAudience]} customers` });
+      setCampaignName("");
+      toast({ title: "Campaign sent", description: `"${campaignName}" sent to ${audienceCounts[selectedAudience]} customers` });
     }, 1500);
   };
 
@@ -83,6 +89,18 @@ const Campaigns = () => {
             </div>
 
             <div className="p-5 space-y-5">
+              {/* Campaign Name */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Campaign Name</label>
+                <input
+                  type="text"
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  placeholder="e.g. Weekend Special, VIP Exclusive"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
               {/* Audience */}
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Target Audience</label>
@@ -115,16 +133,21 @@ const Campaigns = () => {
                 />
               </div>
 
-              {/* Preview */}
+              {/* WhatsApp Preview */}
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">WhatsApp Preview</label>
-                <div className="bg-muted/50 rounded-xl p-4 max-w-xs border border-border">
-                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-                    <div className="w-7 h-7 rounded-full bg-success/10 flex items-center justify-center text-success text-xs font-bold">DJ</div>
-                    <p className="font-medium text-foreground text-sm">Dough & Joe</p>
+                <div className="bg-[#e5ddd5] rounded-xl p-4 max-w-xs border border-border">
+                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-black/10">
+                    <div className="w-8 h-8 rounded-full bg-success flex items-center justify-center text-white text-xs font-bold">DJ</div>
+                    <div>
+                      <p className="font-medium text-foreground text-sm">Dough & Joe</p>
+                      <p className="text-[10px] text-muted-foreground">Business</p>
+                    </div>
                   </div>
-                  <div className="bg-card rounded-lg px-3 py-2.5 text-sm text-foreground whitespace-pre-line">
+                  {/* Message bubble */}
+                  <div className="bg-white rounded-lg rounded-tl-none px-3 py-2.5 text-sm text-foreground whitespace-pre-line shadow-sm relative">
                     {message}
+                    <span className="text-[10px] text-muted-foreground float-right mt-1 ml-2">2:30 PM ✓✓</span>
                   </div>
                 </div>
               </div>

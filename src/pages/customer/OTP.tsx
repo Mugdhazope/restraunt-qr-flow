@@ -1,18 +1,43 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useCustomer } from "@/context/CustomerContext";
+
+const SIMULATED_OTP = "482916";
 
 const OTP = () => {
   const navigate = useNavigate();
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const { restaurantId } = useParams<{ restaurantId: string }>();
+  const { customer, addCheckin } = useCustomer();
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
-  const refs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+  const [error, setError] = useState("");
+  const [showSimulated, setShowSimulated] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [canResend, setCanResend] = useState(false);
+  const refs = Array.from({ length: 6 }, () => useRef<HTMLInputElement>(null));
+
+  useEffect(() => {
+    // Show simulated OTP after 1.5s
+    const t = setTimeout(() => setShowSimulated(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      setCanResend(true);
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
 
   const handleChange = (index: number, value: string) => {
-    if (value.length > 1) return;
+    if (!/^\d?$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    if (value && index < 3) refs[index + 1].current?.focus();
+    setError("");
+    if (value && index < 5) refs[index + 1].current?.focus();
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -21,9 +46,39 @@ const OTP = () => {
     }
   };
 
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pasted.length === 6) {
+      setOtp(pasted.split(""));
+      refs[5].current?.focus();
+    }
+  }, []);
+
   const handleSubmit = () => {
+    const entered = otp.join("");
+    if (entered.length < 6) {
+      setError("Please enter all 6 digits");
+      return;
+    }
+    if (entered !== SIMULATED_OTP) {
+      setError("Incorrect OTP. Please try again.");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => navigate("/reward"), 1500);
+    if (customer) {
+      addCheckin(customer);
+    }
+    setTimeout(() => navigate(`/scan/${restaurantId || "doughandjoe"}/checked-in`), 1200);
+  };
+
+  const handleResend = () => {
+    setCountdown(30);
+    setCanResend(false);
+    setShowSimulated(false);
+    setOtp(["", "", "", "", "", ""]);
+    setError("");
+    setTimeout(() => setShowSimulated(true), 1500);
   };
 
   return (
@@ -31,10 +86,20 @@ const OTP = () => {
       <div className="w-full max-w-sm space-y-8 animate-fade-in text-center">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Verify your number</h1>
-          <p className="text-muted-foreground text-sm mt-1.5">Enter the 4-digit code we sent you</p>
+          <p className="text-muted-foreground text-sm mt-1.5">
+            Enter the 6-digit code sent to +91 {customer?.phone ? `${customer.phone.slice(0, 5)} ${customer.phone.slice(5)}` : "•••••"}
+          </p>
         </div>
 
-        <div className="flex justify-center gap-3">
+        {/* Simulated OTP banner */}
+        {showSimulated && (
+          <div className="bg-muted border border-border rounded-lg px-4 py-3 text-left animate-fade-in">
+            <p className="text-xs text-muted-foreground mb-0.5">Simulated SMS</p>
+            <p className="text-sm text-foreground font-mono tracking-widest">{SIMULATED_OTP}</p>
+          </div>
+        )}
+
+        <div className="flex justify-center gap-2" onPaste={handlePaste}>
           {otp.map((digit, i) => (
             <input
               key={i}
@@ -45,10 +110,14 @@ const OTP = () => {
               value={digit}
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
-              className="w-14 h-14 rounded-lg bg-card border border-border text-center text-xl font-semibold text-foreground focus:border-foreground focus:ring-1 focus:ring-ring outline-none transition-all"
+              className={`w-12 h-14 rounded-lg bg-card border text-center text-xl font-semibold text-foreground outline-none transition-all ${
+                error ? "border-destructive" : "border-border focus:border-foreground focus:ring-1 focus:ring-ring"
+              }`}
             />
           ))}
         </div>
+
+        {error && <p className="text-destructive text-sm animate-fade-in">{error}</p>}
 
         <button
           onClick={handleSubmit}
@@ -65,8 +134,12 @@ const OTP = () => {
           )}
         </button>
 
-        <button className="text-muted-foreground text-sm hover:text-foreground transition-colors">
-          Resend code
+        <button
+          onClick={handleResend}
+          disabled={!canResend}
+          className="text-muted-foreground text-sm hover:text-foreground transition-colors disabled:opacity-50"
+        >
+          {canResend ? "Resend code" : `Resend in ${countdown}s`}
         </button>
       </div>
     </div>
