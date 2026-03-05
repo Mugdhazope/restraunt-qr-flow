@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useCustomer } from "@/context/CustomerContext";
 
 const options = [
   { label: "Loved it", value: "loved", emoji: "😍" },
@@ -9,17 +10,25 @@ const options = [
 
 const CustomerFeedback = () => {
   const navigate = useNavigate();
+  const { restaurantId } = useParams<{ restaurantId: string }>();
+  const { customer } = useCustomer();
   const [selected, setSelected] = useState<string | null>(null);
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [showWhatsApp, setShowWhatsApp] = useState(false);
+
+  // Simulate delayed WhatsApp prompt
+  const handleShowFeedback = () => {
+    setShowWhatsApp(true);
+  };
 
   const handleSubmit = () => {
     setSubmitted(true);
     setTimeout(() => {
       if (selected === "loved") {
-        navigate("/google-review-prompt");
+        navigate(`/scan/${restaurantId || "doughandjoe"}/review`);
       } else {
-        navigate("/");
+        navigate(`/scan/${restaurantId || "doughandjoe"}/checked-in`);
       }
     }, 1500);
   };
@@ -36,12 +45,52 @@ const CustomerFeedback = () => {
     );
   }
 
+  // WhatsApp-style delayed prompt
+  if (!showWhatsApp) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-sm space-y-6 animate-fade-in">
+          {/* Simulated WhatsApp message */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-success/10 px-4 py-2.5 flex items-center gap-2 border-b border-border">
+              <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center text-success text-xs font-bold">
+                {restaurantId === "thenest" ? "TN" : "DJ"}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {restaurantId === "thenest" ? "The Nest" : "Dough & Joe"}
+                </p>
+                <p className="text-[10px] text-muted-foreground">via WhatsApp · 3h ago</p>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="bg-muted/50 rounded-lg rounded-tl-none px-3 py-2.5 text-sm text-foreground max-w-[85%]">
+                Hey {customer?.name || "there"}! 👋<br />
+                Thanks for visiting {restaurantId === "thenest" ? "The Nest" : "Dough & Joe"} today.<br />
+                How was your experience?
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleShowFeedback}
+            className="w-full bg-foreground text-background font-medium py-3 rounded-lg text-sm hover:bg-foreground/90 transition-colors"
+          >
+            Share Feedback
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6 animate-fade-in">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground">How was your experience?</h1>
-          <p className="text-muted-foreground text-sm mt-1.5">At Dough & Joe today</p>
+          <p className="text-muted-foreground text-sm mt-1.5">
+            At {restaurantId === "thenest" ? "The Nest" : "Dough & Joe"} today
+          </p>
         </div>
 
         <div className="space-y-2">
