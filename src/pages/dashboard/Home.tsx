@@ -1,34 +1,35 @@
+import { useRestaurant } from "@/context/RestaurantContext";
 import { dashboardStats, customerGrowthData, feedbackSentimentData, visitFrequencyData } from "@/data/mockData";
-import { Users, TrendingUp, MessageSquare, Star, Megaphone, Eye } from "lucide-react";
+import { Users, TrendingUp, MessageSquare, Star, Megaphone } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 
-const stats = [
-  { label: "Total Customers", value: dashboardStats.totalCustomers.toLocaleString(), icon: Users, change: "+12%" },
-  { label: "This Week", value: dashboardStats.customersThisWeek, icon: TrendingUp, change: "+8%" },
-  { label: "Feedback Collected", value: dashboardStats.feedbackCollected, icon: MessageSquare, change: "+15%" },
-  { label: "Positive Rate", value: `${dashboardStats.positiveFeedbackRate}%`, icon: Star, change: "+3%" },
-  { label: "Google Reviews", value: dashboardStats.googleReviewsGenerated, icon: Star, change: "+22%" },
-  { label: "Campaigns Sent", value: dashboardStats.campaignsSent, icon: Megaphone, change: "+5%" },
-];
-
 const DashboardHome = () => {
+  const { selectedOutlet } = useRestaurant();
+  const rid = selectedOutlet.restaurantId;
+  const stats = dashboardStats[rid] || dashboardStats["doughandjoe"];
+  const growth = customerGrowthData[rid] || customerGrowthData["doughandjoe"];
+
+  const statCards = [
+    { label: "Total Customers", value: stats.totalCustomers.toLocaleString(), icon: Users, change: "+12%" },
+    { label: "This Week", value: String(stats.customersThisWeek), icon: TrendingUp, change: "+8%" },
+    { label: "Feedback Collected", value: String(stats.feedbackCollected), icon: MessageSquare, change: "+15%" },
+    { label: "Positive Rate", value: `${stats.positiveFeedbackRate}%`, icon: Star, change: "+3%" },
+    { label: "Google Reviews", value: String(stats.googleReviewsGenerated), icon: Star, change: "+22%" },
+    { label: "Campaigns Sent", value: String(stats.campaignsSent), icon: Megaphone, change: "+5%" },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">{selectedOutlet.name} Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Overview of your restaurant's growth metrics</p>
       </div>
 
-      {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {stats.map((stat, i) => {
+        {statCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div
-              key={stat.label}
-              className="bg-card border border-border rounded-xl p-4 animate-fade-in"
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
+            <div key={stat.label} className="bg-card border border-border rounded-xl p-4 animate-fade-in" style={{ animationDelay: `${i * 0.05}s` }}>
               <div className="flex items-center justify-between mb-3">
                 <Icon size={16} className="text-muted-foreground" />
                 <span className="text-xs font-medium text-success">{stat.change}</span>
@@ -40,13 +41,11 @@ const DashboardHome = () => {
         })}
       </div>
 
-      {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Customer Growth */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 animate-fade-in" style={{ animationDelay: "0.15s" }}>
+        <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5 animate-fade-in">
           <h3 className="text-sm font-semibold text-foreground mb-4">Customer Growth</h3>
           <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={customerGrowthData}>
+            <AreaChart data={growth}>
               <defs>
                 <linearGradient id="colorCustomers" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.1} />
@@ -61,8 +60,7 @@ const DashboardHome = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Feedback Sentiment */}
-        <div className="bg-card border border-border rounded-xl p-5 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+        <div className="bg-card border border-border rounded-xl p-5 animate-fade-in">
           <h3 className="text-sm font-semibold text-foreground mb-4">Feedback Sentiment</h3>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
@@ -85,8 +83,7 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {/* Visit Frequency */}
-      <div className="bg-card border border-border rounded-xl p-5 animate-fade-in" style={{ animationDelay: "0.25s" }}>
+      <div className="bg-card border border-border rounded-xl p-5 animate-fade-in">
         <h3 className="text-sm font-semibold text-foreground mb-4">Visit Frequency Distribution</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={visitFrequencyData}>

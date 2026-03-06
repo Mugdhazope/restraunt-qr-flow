@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRestaurant } from "@/context/RestaurantContext";
 import { mockFeedback } from "@/data/mockData";
 import { toast } from "@/hooks/use-toast";
 import { Check, Star, ArrowUpRight } from "lucide-react";
@@ -6,8 +7,10 @@ import { Check, Star, ArrowUpRight } from "lucide-react";
 const sentimentFilters = ["All", "Positive", "Neutral", "Negative"];
 
 const Feedback = () => {
+  const { selectedOutlet } = useRestaurant();
+  const restaurantFeedback = mockFeedback.filter((f) => f.restaurant === selectedOutlet.restaurantId);
   const [filter, setFilter] = useState("All");
-  const [feedbackList, setFeedbackList] = useState(mockFeedback);
+  const [feedbackList, setFeedbackList] = useState(restaurantFeedback);
 
   const filtered = feedbackList.filter((f) => {
     if (filter === "All") return true;
@@ -27,10 +30,9 @@ const Feedback = () => {
     <div className="space-y-4">
       <div className="animate-fade-in">
         <h1 className="text-2xl font-bold text-foreground">Feedback</h1>
-        <p className="text-muted-foreground text-sm">{mockFeedback.length} responses collected</p>
+        <p className="text-muted-foreground text-sm">{restaurantFeedback.length} responses at {selectedOutlet.name}</p>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2 animate-fade-in">
         {sentimentFilters.map((f) => (
           <button
@@ -45,7 +47,6 @@ const Feedback = () => {
         ))}
       </div>
 
-      {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((fb, i) => (
           <div
@@ -78,20 +79,12 @@ const Feedback = () => {
 
               <div className="flex items-center gap-1">
                 {!fb.resolved && (
-                  <button
-                    onClick={() => markResolved(fb.id)}
-                    className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                    title="Mark resolved"
-                  >
+                  <button onClick={() => markResolved(fb.id)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Mark resolved">
                     <Check size={14} />
                   </button>
                 )}
                 {fb.sentiment === "positive" && (
-                  <button
-                    onClick={() => sendReviewRequest(fb.name)}
-                    className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
-                    title="Send review request"
-                  >
+                  <button onClick={() => sendReviewRequest(fb.name)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary" title="Send review request">
                     <ArrowUpRight size={14} />
                   </button>
                 )}
