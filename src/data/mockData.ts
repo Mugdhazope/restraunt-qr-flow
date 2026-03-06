@@ -1,32 +1,34 @@
 export const outlets = [
-  { id: 1, name: "Dough & Joe", location: "Koramangala, Bangalore" },
-  { id: 2, name: "The Nest", location: "Indiranagar, Bangalore" },
+  { id: 1, name: "Dough & Joe", location: "Koramangala, Bangalore", restaurantId: "doughandjoe" },
+  { id: 2, name: "The Nest", location: "Indiranagar, Bangalore", restaurantId: "thenest" },
 ];
 
 export const mockCustomers = [
-  { id: 1, name: "Mugdha Sharma", phone: "+91 98765 43210", visits: 12, lastVisit: "2026-02-10", tag: "VIP", status: "Active", feedback: 4.8, sentiment: "positive" },
-  { id: 2, name: "Arjun Patel", phone: "+91 87654 32109", visits: 8, lastVisit: "2026-02-09", tag: "Frequent", status: "Active", feedback: 4.2, sentiment: "positive" },
-  { id: 3, name: "Priya Nair", phone: "+91 76543 21098", visits: 3, lastVisit: "2026-02-08", tag: "First-time", status: "Active", feedback: 4.5, sentiment: "positive" },
-  { id: 4, name: "Rahul Gupta", phone: "+91 65432 10987", visits: 15, lastVisit: "2026-02-07", tag: "VIP", status: "Active", feedback: 4.9, sentiment: "positive" },
-  { id: 5, name: "Ananya Desai", phone: "+91 54321 09876", visits: 1, lastVisit: "2026-01-20", tag: "First-time", status: "Inactive", feedback: 3.8, sentiment: "neutral" },
-  { id: 6, name: "Vikram Singh", phone: "+91 43210 98765", visits: 6, lastVisit: "2026-02-05", tag: "Frequent", status: "Active", feedback: 4.0, sentiment: "neutral" },
-  { id: 7, name: "Sneha Kulkarni", phone: "+91 32109 87654", visits: 20, lastVisit: "2026-02-11", tag: "VIP", status: "Active", feedback: 5.0, sentiment: "positive" },
-  { id: 8, name: "Karan Mehta", phone: "+91 21098 76543", visits: 2, lastVisit: "2026-01-15", tag: "First-time", status: "Inactive", feedback: 3.2, sentiment: "negative" },
-  { id: 9, name: "Deepika Rao", phone: "+91 10987 65432", visits: 10, lastVisit: "2026-02-12", tag: "VIP", status: "Active", feedback: 4.7, sentiment: "positive" },
-  { id: 10, name: "Amit Joshi", phone: "+91 09876 54321", visits: 4, lastVisit: "2026-02-01", tag: "Frequent", status: "Active", feedback: 3.9, sentiment: "neutral" },
+  { id: 1, name: "Mugdha Sharma", phone: "+91 98765 43210", visits: 12, lastVisit: "2026-02-10", tag: "VIP", status: "Active", feedback: 4.8, sentiment: "positive", restaurant: "doughandjoe" },
+  { id: 2, name: "Arjun Patel", phone: "+91 87654 32109", visits: 8, lastVisit: "2026-02-09", tag: "Frequent", status: "Active", feedback: 4.2, sentiment: "positive", restaurant: "doughandjoe" },
+  { id: 3, name: "Priya Nair", phone: "+91 76543 21098", visits: 3, lastVisit: "2026-02-08", tag: "First-time", status: "Active", feedback: 4.5, sentiment: "positive", restaurant: "doughandjoe" },
+  { id: 4, name: "Rahul Gupta", phone: "+91 65432 10987", visits: 15, lastVisit: "2026-02-07", tag: "VIP", status: "Active", feedback: 4.9, sentiment: "positive", restaurant: "doughandjoe" },
+  { id: 5, name: "Ananya Desai", phone: "+91 54321 09876", visits: 1, lastVisit: "2026-01-20", tag: "First-time", status: "Inactive", feedback: 3.8, sentiment: "neutral", restaurant: "doughandjoe" },
+  { id: 6, name: "Vikram Singh", phone: "+91 43210 98765", visits: 6, lastVisit: "2026-02-05", tag: "Frequent", status: "Active", feedback: 4.0, sentiment: "neutral", restaurant: "thenest" },
+  { id: 7, name: "Sneha Kulkarni", phone: "+91 32109 87654", visits: 20, lastVisit: "2026-02-11", tag: "VIP", status: "Active", feedback: 5.0, sentiment: "positive", restaurant: "thenest" },
+  { id: 8, name: "Karan Mehta", phone: "+91 21098 76543", visits: 2, lastVisit: "2026-01-15", tag: "First-time", status: "Inactive", feedback: 3.2, sentiment: "negative", restaurant: "thenest" },
+  { id: 9, name: "Deepika Rao", phone: "+91 10987 65432", visits: 10, lastVisit: "2026-02-12", tag: "VIP", status: "Active", feedback: 4.7, sentiment: "positive", restaurant: "thenest" },
+  { id: 10, name: "Amit Joshi", phone: "+91 09876 54321", visits: 4, lastVisit: "2026-02-01", tag: "Frequent", status: "Active", feedback: 3.9, sentiment: "neutral", restaurant: "doughandjoe" },
+  { id: 11, name: "Riya Kapoor", phone: "+91 99887 76655", visits: 7, lastVisit: "2026-02-11", tag: "Frequent", status: "Active", feedback: 4.3, sentiment: "positive", restaurant: "thenest" },
+  { id: 12, name: "Nikhil Verma", phone: "+91 88776 65544", visits: 1, lastVisit: "2026-02-13", tag: "Influencer", status: "Active", feedback: 4.6, sentiment: "positive", restaurant: "doughandjoe" },
 ];
 
 export const mockFeedback = [
-  { id: 1, name: "Mugdha Sharma", rating: 5, sentiment: "positive", comment: "Best pizza in town! The crust was perfect.", date: "2026-02-10", resolved: false },
-  { id: 2, name: "Arjun Patel", rating: 4, sentiment: "neutral", comment: "Nice ambiance, food was decent.", date: "2026-02-09", resolved: false },
-  { id: 3, name: "Priya Nair", rating: 5, sentiment: "positive", comment: "Absolutely loved the cookie dough shake!", date: "2026-02-08", resolved: true },
-  { id: 4, name: "Karan Mehta", rating: 2, sentiment: "negative", comment: "Service was slow today. Food was okay.", date: "2026-02-07", resolved: false },
-  { id: 5, name: "Rahul Gupta", rating: 5, sentiment: "positive", comment: "The new menu items are amazing!", date: "2026-02-06", resolved: true },
-  { id: 6, name: "Ananya Desai", rating: 2, sentiment: "negative", comment: "Pizza was cold when it arrived.", date: "2026-02-05", resolved: false },
-  { id: 7, name: "Vikram Singh", rating: 3, sentiment: "neutral", comment: "Good food, nice place to hang out.", date: "2026-02-04", resolved: true },
-  { id: 8, name: "Sneha Kulkarni", rating: 5, sentiment: "positive", comment: "Perfect date night spot! 10/10", date: "2026-02-03", resolved: true },
-  { id: 9, name: "Deepika Rao", rating: 5, sentiment: "positive", comment: "Love the vibe and food quality.", date: "2026-02-12", resolved: false },
-  { id: 10, name: "Amit Joshi", rating: 3, sentiment: "neutral", comment: "Portions could be bigger for the price.", date: "2026-02-01", resolved: false },
+  { id: 1, name: "Mugdha Sharma", rating: 5, sentiment: "positive", comment: "Best pizza in town! The crust was perfect.", date: "2026-02-10", resolved: false, restaurant: "doughandjoe" },
+  { id: 2, name: "Arjun Patel", rating: 4, sentiment: "neutral", comment: "Nice ambiance, food was decent.", date: "2026-02-09", resolved: false, restaurant: "doughandjoe" },
+  { id: 3, name: "Priya Nair", rating: 5, sentiment: "positive", comment: "Absolutely loved the cookie dough shake!", date: "2026-02-08", resolved: true, restaurant: "doughandjoe" },
+  { id: 4, name: "Karan Mehta", rating: 2, sentiment: "negative", comment: "Service was slow today. Food was okay.", date: "2026-02-07", resolved: false, restaurant: "thenest" },
+  { id: 5, name: "Rahul Gupta", rating: 5, sentiment: "positive", comment: "The new menu items are amazing!", date: "2026-02-06", resolved: true, restaurant: "doughandjoe" },
+  { id: 6, name: "Ananya Desai", rating: 2, sentiment: "negative", comment: "Pizza was cold when it arrived.", date: "2026-02-05", resolved: false, restaurant: "doughandjoe" },
+  { id: 7, name: "Vikram Singh", rating: 3, sentiment: "neutral", comment: "Good food, nice place to hang out.", date: "2026-02-04", resolved: true, restaurant: "thenest" },
+  { id: 8, name: "Sneha Kulkarni", rating: 5, sentiment: "positive", comment: "Perfect date night spot! 10/10", date: "2026-02-03", resolved: true, restaurant: "thenest" },
+  { id: 9, name: "Deepika Rao", rating: 5, sentiment: "positive", comment: "Love the vibe and food quality.", date: "2026-02-12", resolved: false, restaurant: "thenest" },
+  { id: 10, name: "Amit Joshi", rating: 3, sentiment: "neutral", comment: "Portions could be bigger for the price.", date: "2026-02-01", resolved: false, restaurant: "doughandjoe" },
 ];
 
 export const mockRewards = [
@@ -44,26 +46,49 @@ export const mockMessages = [
   { id: 5, sender: "customer", text: "Amazing! I'll be there this weekend", time: "2:36 PM" },
 ];
 
-export const dashboardStats = {
-  totalCustomers: 842,
-  customersThisWeek: 47,
-  feedbackCollected: 324,
-  positiveFeedbackRate: 78,
-  googleReviewsGenerated: 156,
-  campaignsSent: 23,
-  repeatRate: 38,
-  avgFeedback: 4.4,
-  whatsappReach: 89,
+export const dashboardStats: Record<string, { totalCustomers: number; customersThisWeek: number; feedbackCollected: number; positiveFeedbackRate: number; googleReviewsGenerated: number; campaignsSent: number; repeatRate: number; avgFeedback: number; whatsappReach: number }> = {
+  doughandjoe: {
+    totalCustomers: 542,
+    customersThisWeek: 28,
+    feedbackCollected: 198,
+    positiveFeedbackRate: 81,
+    googleReviewsGenerated: 96,
+    campaignsSent: 14,
+    repeatRate: 42,
+    avgFeedback: 4.5,
+    whatsappReach: 91,
+  },
+  thenest: {
+    totalCustomers: 300,
+    customersThisWeek: 19,
+    feedbackCollected: 126,
+    positiveFeedbackRate: 74,
+    googleReviewsGenerated: 60,
+    campaignsSent: 9,
+    repeatRate: 34,
+    avgFeedback: 4.2,
+    whatsappReach: 86,
+  },
 };
 
-export const customerGrowthData = [
-  { month: "Sep", customers: 520 },
-  { month: "Oct", customers: 580 },
-  { month: "Nov", customers: 640 },
-  { month: "Dec", customers: 710 },
-  { month: "Jan", customers: 780 },
-  { month: "Feb", customers: 842 },
-];
+export const customerGrowthData: Record<string, { month: string; customers: number }[]> = {
+  doughandjoe: [
+    { month: "Sep", customers: 320 },
+    { month: "Oct", customers: 360 },
+    { month: "Nov", customers: 400 },
+    { month: "Dec", customers: 450 },
+    { month: "Jan", customers: 500 },
+    { month: "Feb", customers: 542 },
+  ],
+  thenest: [
+    { month: "Sep", customers: 200 },
+    { month: "Oct", customers: 220 },
+    { month: "Nov", customers: 240 },
+    { month: "Dec", customers: 260 },
+    { month: "Jan", customers: 280 },
+    { month: "Feb", customers: 300 },
+  ],
+};
 
 export const feedbackSentimentData = [
   { name: "Positive", value: 65, fill: "hsl(142, 71%, 45%)" },
@@ -87,9 +112,10 @@ export const reviewFunnelStats = {
 };
 
 export const campaignStats = [
-  { id: 1, name: "Weekend Special", audience: "All Customers", sent: 842, delivered: 812, opened: 634, responses: 89, date: "2026-02-10", status: "Completed" },
-  { id: 2, name: "VIP Exclusive", audience: "VIP Only", sent: 89, delivered: 87, opened: 72, responses: 34, date: "2026-02-08", status: "Completed" },
-  { id: 3, name: "Comeback Offer", audience: "Inactive 14+ Days", sent: 64, delivered: 61, opened: 45, responses: 18, date: "2026-02-05", status: "Completed" },
+  { id: 1, name: "Weekend Special", audience: "All Customers", sent: 842, delivered: 812, opened: 634, responses: 89, date: "2026-02-10", status: "Completed", restaurant: "doughandjoe" },
+  { id: 2, name: "VIP Exclusive", audience: "VIP Only", sent: 89, delivered: 87, opened: 72, responses: 34, date: "2026-02-08", status: "Completed", restaurant: "doughandjoe" },
+  { id: 3, name: "Comeback Offer", audience: "Inactive 14+ Days", sent: 64, delivered: 61, opened: 45, responses: 18, date: "2026-02-05", status: "Completed", restaurant: "thenest" },
+  { id: 4, name: "Breakfast Promo", audience: "All Customers", sent: 300, delivered: 290, opened: 220, responses: 45, date: "2026-02-12", status: "Completed", restaurant: "thenest" },
 ];
 
 export const automationRules = [
