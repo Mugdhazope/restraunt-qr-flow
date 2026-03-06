@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { outlets } from "@/data/mockData";
+import { useRestaurant } from "@/context/RestaurantContext";
 import {
   LayoutDashboard, Users, MessageSquare, Star, Megaphone,
   Zap, QrCode, BarChart3, Settings, Search, Bell, ChevronDown,
-  Menu, X, LogOut
+  Menu, X, LogOut, UtensilsCrossed, Upload
 } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "Customers", path: "/dashboard/customers", icon: Users },
+  { label: "Import Customers", path: "/dashboard/import-customers", icon: Upload },
+  { label: "Menu", path: "/dashboard/menu", icon: UtensilsCrossed },
   { label: "Feedback", path: "/dashboard/feedback", icon: MessageSquare },
   { label: "Google Reviews", path: "/dashboard/google-reviews", icon: Star },
   { label: "WhatsApp Campaigns", path: "/dashboard/campaigns", icon: Megaphone },
@@ -23,18 +26,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [outletDropdown, setOutletDropdown] = useState(false);
-  const [selectedOutlet, setSelectedOutlet] = useState(outlets[0]);
+  const { selectedOutlet, setSelectedOutlet } = useRestaurant();
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar overlay on mobile */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-foreground/20 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-sidebar z-50 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
-        {/* Logo */}
         <div className="px-6 h-16 flex items-center justify-between border-b border-sidebar-border">
           <Link to="/dashboard" className="text-sidebar-foreground font-bold text-lg tracking-tight">
             WhatsApp CRM
@@ -44,7 +44,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const active = location.pathname === item.path;
@@ -67,7 +66,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           })}
         </nav>
 
-        {/* Profile */}
         <div className="px-4 py-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-foreground text-xs font-bold">
@@ -84,16 +82,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground">
               <Menu size={20} />
             </button>
-
-            {/* Search */}
             <div className="hidden sm:flex items-center gap-2 bg-muted rounded-lg px-3 py-2 w-64">
               <Search size={16} className="text-muted-foreground" />
               <input
@@ -104,7 +98,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Outlet selector */}
             <div className="relative">
               <button
                 onClick={() => setOutletDropdown(!outletDropdown)}
@@ -129,20 +122,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               )}
             </div>
 
-            {/* Notifications */}
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
               <Bell size={18} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
             </button>
 
-            {/* Profile avatar */}
             <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center text-foreground text-xs font-bold">
               AK
             </div>
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 p-4 lg:p-6 max-w-[1400px] w-full mx-auto">
           {children}
         </main>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRestaurant } from "@/context/RestaurantContext";
 import { mockCustomers, mockFeedback } from "@/data/mockData";
 import { Search, X, Filter } from "lucide-react";
 
@@ -6,17 +7,24 @@ const tagStyles: Record<string, string> = {
   VIP: "bg-primary/10 text-primary",
   Frequent: "bg-foreground/10 text-foreground",
   "First-time": "bg-muted text-muted-foreground",
+  Influencer: "bg-warning/10 text-warning",
+  Regular: "bg-success/10 text-success",
+  "Frequent Visitor": "bg-foreground/10 text-foreground",
 };
 
 const Customers = () => {
+  const { selectedOutlet } = useRestaurant();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("All");
   const [sentimentFilter, setSentimentFilter] = useState("All");
 
-  const selected = mockCustomers.find((c) => c.id === selectedId);
+  const restaurantCustomers = mockCustomers.filter((c) => c.restaurant === selectedOutlet.restaurantId);
+  const selected = restaurantCustomers.find((c) => c.id === selectedId);
 
-  const filtered = mockCustomers.filter((c) => {
+  const allTags = ["All", ...Array.from(new Set(restaurantCustomers.map((c) => c.tag)))];
+
+  const filtered = restaurantCustomers.filter((c) => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search);
     const matchTag = tagFilter === "All" || c.tag === tagFilter;
     const matchSentiment = sentimentFilter === "All" || c.sentiment === sentimentFilter.toLowerCase();
@@ -28,11 +36,10 @@ const Customers = () => {
       <div className="flex items-center justify-between animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Customers</h1>
-          <p className="text-muted-foreground text-sm">{mockCustomers.length} total customers</p>
+          <p className="text-muted-foreground text-sm">{restaurantCustomers.length} customers at {selectedOutlet.name}</p>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 animate-fade-in">
         <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2 flex-1 max-w-sm">
           <Search size={16} className="text-muted-foreground" />
@@ -46,7 +53,7 @@ const Customers = () => {
 
         <div className="flex items-center gap-2">
           <Filter size={14} className="text-muted-foreground" />
-          {["All", "VIP", "Frequent", "First-time"].map((t) => (
+          {allTags.map((t) => (
             <button
               key={t}
               onClick={() => setTagFilter(t)}
@@ -74,7 +81,6 @@ const Customers = () => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden animate-fade-in">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -126,7 +132,6 @@ const Customers = () => {
         </div>
       </div>
 
-      {/* Slide-out panel */}
       {selected && (
         <>
           <div className="fixed inset-0 bg-foreground/10 z-40" onClick={() => setSelectedId(null)} />
@@ -170,7 +175,6 @@ const Customers = () => {
                   </div>
                 </div>
 
-                {/* Recent feedback */}
                 <div>
                   <h3 className="font-semibold text-foreground text-sm mb-3">Recent Feedback</h3>
                   {mockFeedback
@@ -193,7 +197,6 @@ const Customers = () => {
                   )}
                 </div>
 
-                {/* Notes placeholder */}
                 <div>
                   <h3 className="font-semibold text-foreground text-sm mb-2">Notes</h3>
                   <textarea
