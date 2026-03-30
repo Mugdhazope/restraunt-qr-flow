@@ -59,7 +59,23 @@ const Menu = () => {
   };
 
   const currentCategory = menu[activeCategory];
-  const heroImage = categoryHeroImages[currentCategory?.name];
+  const heroImage = currentCategory ? categoryHeroImages[currentCategory.name] : undefined;
+
+  if (!restaurant || menu.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-foreground font-medium">Menu not available</p>
+          <button
+            onClick={() => navigate(`/scan/${restaurantId || "doughandjoe"}/checked-in`)}
+            className="mt-4 text-sm text-muted-foreground hover:text-foreground"
+          >
+            ← Go back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (selectedItem) {
     return (
