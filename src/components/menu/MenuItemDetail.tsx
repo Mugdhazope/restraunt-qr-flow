@@ -30,13 +30,15 @@ const MenuItemDetail = ({
     else if (info.offset.x > 60 && onPrev) onPrev();
   };
 
+  const accentClass = isNest ? "text-emerald-700" : "text-red-600";
+
   return (
     <motion.div
       className="fixed inset-0 z-50 bg-[#f5f0eb]"
-      initial={{ x: "100%" }}
-      animate={{ x: 0 }}
-      exit={{ x: "100%" }}
-      transition={{ type: "spring", damping: 30, stiffness: 280 }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
     >
       <motion.div
         className="h-full flex flex-col"
@@ -45,16 +47,16 @@ const MenuItemDetail = ({
         dragElastic={0.12}
         onDragEnd={handleDragEnd}
       >
-        {/* Hero image — takes ~45% of screen */}
+        {/* Hero image */}
         <div className="relative h-[45vh] overflow-hidden">
           {heroImage ? (
             <motion.img
               src={heroImage}
               alt={item.name}
               className="w-full h-full object-cover"
-              initial={{ scale: 1.2 }}
+              initial={{ scale: 1.15 }}
               animate={{ scale: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#e8e0d5] to-[#d4c8b8] flex items-center justify-center">
@@ -64,7 +66,7 @@ const MenuItemDetail = ({
             </div>
           )}
 
-          {/* Gradient fade into content */}
+          {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#f5f0eb] via-transparent to-black/10" />
 
           {/* Back button */}
@@ -80,7 +82,7 @@ const MenuItemDetail = ({
             <motion.span
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.3 }}
               className={`absolute top-6 right-5 z-10 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm ${
                 item.tag === "Bestseller"
                   ? "bg-amber-100/90 text-amber-700"
@@ -89,12 +91,14 @@ const MenuItemDetail = ({
                   : "bg-white/70 text-foreground/70"
               }`}
             >
-              {item.tag === "Chef's Pick" && <Star size={10} className="inline mr-1 -mt-px" />}
+              {item.tag === "Chef's Pick" && (
+                <Star size={10} className="inline mr-1 -mt-px" />
+              )}
               {item.tag}
             </motion.span>
           )}
 
-          {/* Item counter */}
+          {/* Counter */}
           <div className="absolute bottom-4 right-5 z-10 text-foreground/40 text-xs font-medium">
             {currentIndex + 1} / {totalItems}
           </div>
@@ -103,23 +107,24 @@ const MenuItemDetail = ({
         {/* Content */}
         <div className="flex-1 px-6 -mt-4 relative z-10 overflow-y-auto">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.5 }}
+            transition={{ delay: 0.1, duration: 0.45 }}
           >
+            <p className="text-foreground/30 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">
+              {categoryName}
+            </p>
             <h1 className="text-[28px] font-black text-foreground tracking-tight leading-tight">
               {item.name}
             </h1>
-            <p className={`text-2xl font-bold mt-2 ${isNest ? "text-emerald-700" : "text-red-600"}`}>
-              ₹{item.price}
-            </p>
+            <p className={`text-2xl font-bold mt-2 ${accentClass}`}>₹{item.price}</p>
           </motion.div>
 
           <motion.p
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-foreground/60 text-[15px] leading-relaxed mt-5"
+            transition={{ delay: 0.25, duration: 0.45 }}
+            className="text-foreground/55 text-[15px] leading-relaxed mt-5"
           >
             {item.description}
           </motion.p>
@@ -128,25 +133,15 @@ const MenuItemDetail = ({
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.35 }}
               className="inline-block mt-4 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium"
             >
               🌿 Jain available
             </motion.span>
           )}
-
-          {/* Decorative category watermark */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 1 }}
-            className="text-[48px] font-black text-foreground/[0.03] leading-none mt-8 select-none tracking-tighter"
-          >
-            {categoryName}
-          </motion.p>
         </div>
 
-        {/* Bottom nav arrows for swiping between items */}
+        {/* Bottom nav */}
         <div className="px-6 pb-8 pt-2 flex items-center justify-between">
           <button
             onClick={onPrev || undefined}
@@ -155,8 +150,8 @@ const MenuItemDetail = ({
           >
             <ChevronLeft size={20} className="text-foreground" />
           </button>
-          <div className="flex gap-1">
-            {Array.from({ length: totalItems }).map((_, i) => (
+          <div className="flex gap-1 max-w-[180px] overflow-hidden">
+            {Array.from({ length: Math.min(totalItems, 20) }).map((_, i) => (
               <div
                 key={i}
                 className={`h-1 rounded-full transition-all duration-300 ${
