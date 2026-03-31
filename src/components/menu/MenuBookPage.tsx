@@ -14,151 +14,190 @@ interface MenuBookPageProps {
 }
 
 /**
- * Poster / magazine-style book page.
- * Items are scattered artistically — NOT in a list or grid.
- * Inspired by the reference images: items float at different positions with
- * overlaid name + price, and a large vertical category watermark.
+ * Magazine / editorial poster page.
+ * Items float freely at different sizes, positions, and rotations.
+ * NO circles, NO cards, NO grids — just images placed on a page like a food magazine.
  */
 
-// Predefined artistic positions for up to 5 items on a "poster"
-const LAYOUT_POSITIONS: { top: string; left: string; size: string; zIndex: number }[][] = [
-  // 1 item
-  [{ top: "30%", left: "15%", size: "70%", zIndex: 3 }],
+interface ItemLayout {
+  top: string;
+  left: string;
+  width: string;
+  rotate: number;
+  zIndex: number;
+  labelPos: "below" | "right" | "left";
+}
+
+// Magazine-style scattered layouts — varied sizes, overlapping, rotated
+const LAYOUTS: ItemLayout[][] = [
+  // 1 item — hero center
+  [{ top: "18%", left: "10%", width: "80%", rotate: -2, zIndex: 3, labelPos: "below" }],
   // 2 items
   [
-    { top: "12%", left: "8%", size: "52%", zIndex: 2 },
-    { top: "48%", left: "40%", size: "55%", zIndex: 3 },
+    { top: "8%", left: "5%", width: "58%", rotate: -3, zIndex: 2, labelPos: "below" },
+    { top: "45%", left: "35%", width: "60%", rotate: 2, zIndex: 3, labelPos: "below" },
   ],
-  // 3 items
+  // 3 items — one large, two smaller
   [
-    { top: "8%", left: "5%", size: "48%", zIndex: 2 },
-    { top: "18%", left: "48%", size: "46%", zIndex: 3 },
-    { top: "55%", left: "20%", size: "50%", zIndex: 4 },
+    { top: "5%", left: "8%", width: "55%", rotate: -2, zIndex: 3, labelPos: "right" },
+    { top: "10%", left: "58%", width: "38%", rotate: 4, zIndex: 2, labelPos: "below" },
+    { top: "52%", left: "15%", width: "65%", rotate: -1, zIndex: 4, labelPos: "below" },
   ],
-  // 4 items
+  // 4 items — mixed sizes
   [
-    { top: "6%", left: "5%", size: "44%", zIndex: 2 },
-    { top: "8%", left: "50%", size: "42%", zIndex: 3 },
-    { top: "48%", left: "2%", size: "40%", zIndex: 4 },
-    { top: "52%", left: "45%", size: "46%", zIndex: 5 },
+    { top: "3%", left: "2%", width: "50%", rotate: -3, zIndex: 2, labelPos: "below" },
+    { top: "5%", left: "52%", width: "42%", rotate: 3, zIndex: 3, labelPos: "below" },
+    { top: "44%", left: "8%", width: "38%", rotate: 2, zIndex: 4, labelPos: "below" },
+    { top: "48%", left: "42%", width: "55%", rotate: -2, zIndex: 5, labelPos: "below" },
   ],
-  // 5 items
+  // 5 items — editorial scatter
   [
-    { top: "4%", left: "3%", size: "40%", zIndex: 2 },
-    { top: "6%", left: "52%", size: "38%", zIndex: 3 },
-    { top: "36%", left: "25%", size: "42%", zIndex: 5 },
-    { top: "58%", left: "0%", size: "38%", zIndex: 4 },
-    { top: "62%", left: "48%", size: "40%", zIndex: 6 },
+    { top: "2%", left: "5%", width: "45%", rotate: -2, zIndex: 2, labelPos: "below" },
+    { top: "3%", left: "52%", width: "40%", rotate: 4, zIndex: 3, labelPos: "below" },
+    { top: "32%", left: "20%", width: "52%", rotate: -1, zIndex: 5, labelPos: "below" },
+    { top: "58%", left: "0%", width: "42%", rotate: 3, zIndex: 4, labelPos: "below" },
+    { top: "60%", left: "44%", width: "48%", rotate: -3, zIndex: 6, labelPos: "below" },
   ],
 ];
 
 const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
   const { items, categoryName, heroImage } = page;
   const count = Math.min(items.length, 5);
-  const positions = LAYOUT_POSITIONS[count - 1] || LAYOUT_POSITIONS[4];
-  const accentClass = isNest ? "text-emerald-700" : "text-red-600";
+  const positions = LAYOUTS[count - 1] || LAYOUTS[4];
+  const accentColor = isNest ? "#047857" : "#dc2626";
 
   return (
-    <div className="h-full w-full bg-[#f0ebe4] relative overflow-hidden select-none">
-      {/* Subtle background image wash */}
-      {heroImage && (
-        <div className="absolute inset-0 opacity-[0.07]">
-          <img src={heroImage} alt="" className="w-full h-full object-cover blur-2xl scale-110" />
-        </div>
-      )}
+    <div className="h-full w-full bg-[#f4efe8] relative overflow-hidden select-none">
+      {/* Subtle paper texture */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
 
-      {/* Large vertical category watermark — like the reference */}
+      {/* Large watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
         <motion.span
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.8 }}
-          className="text-foreground/[0.04] font-black text-[140px] leading-none tracking-tighter whitespace-nowrap -rotate-90 select-none"
-          style={{ writingMode: "vertical-lr" }}
+          animate={{ opacity: 0.03 }}
+          transition={{ delay: 0.3, duration: 1 }}
+          className="font-black text-[160px] leading-none tracking-tighter whitespace-nowrap select-none uppercase"
+          style={{
+            color: accentColor,
+            transform: "rotate(-90deg)",
+          }}
         >
           {categoryName}
         </motion.span>
       </div>
 
-      {/* Category title at top */}
+      {/* Category header — editorial style */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="absolute top-4 left-5 z-10"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="absolute top-5 left-5 z-10"
       >
-        <h2 className="text-foreground/80 text-xs font-bold uppercase tracking-[0.2em]">
+        <div
+          className="w-8 h-[2px] mb-2"
+          style={{ backgroundColor: accentColor }}
+        />
+        <h2
+          className="text-[10px] font-bold uppercase tracking-[0.25em]"
+          style={{ color: accentColor }}
+        >
           {categoryName}
         </h2>
       </motion.div>
 
-      {/* Artistically positioned items */}
-      <div className="absolute inset-0 pt-10 pb-4 px-3">
+      {/* Freely placed food items — magazine style */}
+      <div className="absolute inset-0 pt-14 pb-4 px-2">
         {items.slice(0, 5).map((item, idx) => {
-          const pos = positions[idx];
+          const layout = positions[idx];
           return (
             <motion.button
               key={item.name}
               onClick={() => onItemTap(idx)}
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 + idx * 0.08, duration: 0.45, ease: "easeOut" }}
-              className="absolute active:scale-95 transition-transform touch-manipulation"
-              style={{
-                top: pos.top,
-                left: pos.left,
-                width: pos.size,
-                zIndex: pos.zIndex,
+              initial={{ opacity: 0, y: 30, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                delay: 0.15 + idx * 0.1,
+                duration: 0.6,
+                ease: [0.22, 1, 0.36, 1],
               }}
+              className="absolute touch-manipulation group"
+              style={{
+                top: layout.top,
+                left: layout.left,
+                width: layout.width,
+                zIndex: layout.zIndex,
+                transform: `rotate(${layout.rotate}deg)`,
+              }}
+              whileTap={{ scale: 0.93 }}
             >
-              {/* Circular / rounded item with food image */}
               <div className="relative">
-                {heroImage ? (
-                  <div className="w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 border-white/60">
+                {/* Food image — floating with drop shadow, NO border, NO circle */}
+                <div className="relative">
+                  {heroImage ? (
                     <img
                       src={heroImage}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      className="w-full aspect-[4/3] object-cover rounded-2xl"
                       style={{
-                        // Offset each item's crop slightly to differentiate
-                        objectPosition: `${30 + idx * 15}% ${20 + idx * 10}%`,
+                        objectPosition: `${20 + idx * 18}% ${15 + idx * 12}%`,
+                        filter: "drop-shadow(0 12px 24px rgba(0,0,0,0.15))",
                       }}
                     />
-                  </div>
-                ) : (
-                  <div className="w-full aspect-square rounded-full bg-foreground/[0.06] border-4 border-white/40 flex items-center justify-center">
-                    <span className="text-4xl font-black text-foreground/[0.08]">
-                      {item.name.charAt(0)}
-                    </span>
-                  </div>
-                )}
+                  ) : (
+                    <div
+                      className="w-full aspect-[4/3] rounded-2xl flex items-center justify-center"
+                      style={{
+                        background: `linear-gradient(135deg, #e8e0d5, #d4c8b8)`,
+                        filter: "drop-shadow(0 12px 24px rgba(0,0,0,0.1))",
+                      }}
+                    >
+                      <span className="text-5xl font-black opacity-10">
+                        {item.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
 
-                {/* Name + Price overlay */}
-                <div className="mt-1.5 text-center px-1">
-                  <p className="text-foreground/80 font-bold text-[11px] leading-tight truncate">
+                  {/* Hover / active glow */}
+                  <div className="absolute inset-0 rounded-2xl bg-white/0 group-active:bg-white/10 transition-colors duration-200" />
+                </div>
+
+                {/* Name + Price — overlaid at bottom of image */}
+                <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-black/50 via-black/20 to-transparent rounded-b-2xl">
+                  <p className="text-white font-bold text-[12px] leading-tight truncate drop-shadow-sm">
                     {item.name}
                   </p>
-                  <p className={`font-bold text-[11px] ${accentClass}`}>
+                  <p className="text-white/80 font-semibold text-[11px] mt-0.5">
                     ₹{item.price}
                   </p>
                 </div>
 
-                {/* Tag badge */}
+                {/* Tag — floating badge */}
                 {item.tag && (
-                  <span
-                    className={`absolute -top-1 -right-1 text-[8px] px-1.5 py-0.5 rounded-full font-bold ${
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + idx * 0.08 }}
+                    className={`absolute -top-2 -right-2 text-[8px] px-2 py-1 rounded-full font-bold shadow-md ${
                       item.tag === "Bestseller"
-                        ? "bg-amber-100 text-amber-700"
+                        ? "bg-amber-400 text-amber-900"
                         : item.tag === "Chef's Pick"
-                        ? "bg-rose-100 text-rose-700"
-                        : "bg-blue-100 text-blue-700"
+                        ? "bg-rose-400 text-white"
+                        : item.tag === "Popular"
+                        ? "bg-orange-400 text-white"
+                        : "bg-white text-foreground/70"
                     }`}
                   >
                     {item.tag === "Chef's Pick" && (
                       <Star size={7} className="inline mr-0.5 -mt-px" />
                     )}
                     {item.tag}
-                  </span>
+                  </motion.span>
                 )}
               </div>
             </motion.button>
@@ -166,9 +205,11 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
         })}
       </div>
 
-      {/* Page edge decoration — looks like book page edge */}
-      <div className="absolute top-0 bottom-0 right-0 w-[3px] bg-gradient-to-l from-foreground/10 to-transparent" />
-      <div className="absolute top-0 bottom-0 right-[3px] w-[1px] bg-foreground/[0.04]" />
+      {/* Book edge — right side */}
+      <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-l from-black/8 to-transparent" />
+      <div className="absolute top-0 bottom-0 right-1 w-px bg-black/[0.03]" />
+      {/* Book edge — left side (spine) */}
+      <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-r from-black/5 to-transparent" />
     </div>
   );
 };
