@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
 import { MenuItem } from "@/data/menuData";
+import { itemImages } from "./menuImages";
 
 interface MenuBookPageProps {
   page: {
@@ -14,184 +14,169 @@ interface MenuBookPageProps {
 }
 
 /**
- * Editorial / magazine-style menu page.
- * Items are scattered asymmetrically like stickers on a page.
- * No cards, no containers, no grids — just floating images + typography.
+ * Magazine / poster-style menu page.
+ * Floating transparent food images scattered like stickers on a cream page.
+ * Matches the reference: large vertical category watermark + scattered items.
  */
 
-// Each layout position: percentage-based, with rotation and scale for editorial feel
+// Asymmetric layout positions for floating items — percentage-based
 const LAYOUTS: {
   top: string;
   left: string;
-  w: string;
+  size: string;
   rotate: number;
   z: number;
+  labelSide: "left" | "right" | "below";
 }[][] = [
-  // 1 item — large centered
-  [{ top: "18%", left: "12%", w: "72%", rotate: -2, z: 3 }],
-  // 2 items — staggered
+  // 1 item
+  [{ top: "20%", left: "15%", size: "65%", rotate: -3, z: 3, labelSide: "below" }],
+  // 2 items
   [
-    { top: "6%", left: "4%", w: "55%", rotate: -3, z: 2 },
-    { top: "44%", left: "32%", w: "60%", rotate: 2.5, z: 3 },
+    { top: "5%", left: "5%", size: "52%", rotate: -4, z: 2, labelSide: "right" },
+    { top: "45%", left: "38%", size: "55%", rotate: 3, z: 3, labelSide: "left" },
   ],
-  // 3 items — editorial triangle
+  // 3 items
   [
-    { top: "4%", left: "28%", w: "50%", rotate: 2, z: 3 },
-    { top: "36%", left: "2%", w: "44%", rotate: -4, z: 2 },
-    { top: "46%", left: "48%", w: "48%", rotate: 3, z: 4 },
+    { top: "2%", left: "30%", size: "45%", rotate: 3, z: 3, labelSide: "below" },
+    { top: "35%", left: "0%", size: "42%", rotate: -5, z: 2, labelSide: "right" },
+    { top: "42%", left: "50%", size: "46%", rotate: 4, z: 4, labelSide: "left" },
   ],
-  // 4 items — magazine spread
+  // 4 items
   [
-    { top: "2%", left: "4%", w: "46%", rotate: -2.5, z: 2 },
-    { top: "6%", left: "50%", w: "42%", rotate: 3, z: 3 },
-    { top: "44%", left: "8%", w: "40%", rotate: 4, z: 4 },
-    { top: "48%", left: "46%", w: "48%", rotate: -1.5, z: 5 },
+    { top: "0%", left: "2%", size: "42%", rotate: -3, z: 2, labelSide: "right" },
+    { top: "3%", left: "52%", size: "38%", rotate: 4, z: 3, labelSide: "below" },
+    { top: "42%", left: "8%", size: "36%", rotate: 5, z: 4, labelSide: "right" },
+    { top: "46%", left: "48%", size: "44%", rotate: -2, z: 5, labelSide: "left" },
   ],
-  // 5 items — full editorial collage
+  // 5 items — editorial collage matching the reference
   [
-    { top: "1%", left: "6%", w: "42%", rotate: -3, z: 2 },
-    { top: "3%", left: "52%", w: "38%", rotate: 4, z: 3 },
-    { top: "30%", left: "22%", w: "50%", rotate: -1, z: 5 },
-    { top: "56%", left: "2%", w: "36%", rotate: 5, z: 4 },
-    { top: "58%", left: "44%", w: "44%", rotate: -2.5, z: 6 },
+    { top: "0%", left: "5%", size: "36%", rotate: -4, z: 2, labelSide: "right" },
+    { top: "2%", left: "55%", size: "32%", rotate: 5, z: 3, labelSide: "below" },
+    { top: "28%", left: "25%", size: "40%", rotate: -1, z: 5, labelSide: "below" },
+    { top: "52%", left: "0%", size: "34%", rotate: 6, z: 4, labelSide: "right" },
+    { top: "55%", left: "48%", size: "38%", rotate: -3, z: 6, labelSide: "left" },
   ],
 ];
 
 const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
-  const { items, categoryName, heroImage } = page;
+  const { items, categoryName } = page;
   const count = Math.min(items.length, 5);
   const positions = LAYOUTS[count - 1] || LAYOUTS[4];
   const accentColor = isNest ? "#047857" : "#dc2626";
 
   return (
     <div className="h-full w-full bg-[#f0ebe4] relative overflow-hidden select-none">
-      {/* Subtle texture overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Large watermark category name — rotated, editorial */}
+      {/* Large vertical watermark — category name rotated */}
       <motion.div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden"
+        className="absolute inset-0 flex items-center pointer-events-none overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 1 }}
+        transition={{ delay: 0.2, duration: 0.8 }}
+        style={{ left: "2%" }}
       >
         <span
-          className="text-[160px] font-black tracking-[-0.05em] leading-none text-foreground/[0.025] select-none"
+          className="font-black tracking-[-0.04em] leading-none select-none"
           style={{
             writingMode: "vertical-lr",
             transform: "rotate(180deg)",
+            fontSize: "clamp(80px, 20vw, 160px)",
+            color: "rgba(0,0,0,0.04)",
+            letterSpacing: "-0.03em",
           }}
         >
-          {categoryName}
+          {categoryName.toUpperCase()}
         </span>
       </motion.div>
 
-      {/* Category name — editorial typography */}
+      {/* Category title — top */}
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.1, duration: 0.6 }}
-        className="absolute top-5 left-5 z-10"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="absolute top-4 left-0 right-0 z-10 text-center"
       >
-        <p className="text-foreground/20 text-[9px] font-bold uppercase tracking-[0.3em] mb-0.5">
-          Menu
-        </p>
         <h2
-          className="text-[22px] font-black tracking-tight leading-none"
-          style={{ color: accentColor }}
+          className="text-[22px] font-black tracking-tight uppercase"
+          style={{ color: "rgba(0,0,0,0.85)", fontFamily: "'Inter', sans-serif" }}
         >
-          {categoryName}
+          {categoryName.toUpperCase()}
         </h2>
       </motion.div>
 
-      {/* Floating food items — no containers, just images + text */}
-      <div className="absolute inset-0 pt-16 pb-4 px-2">
+      {/* Floating food items — sticker-style, no containers */}
+      <div className="absolute inset-0 pt-14 pb-4 px-3">
         {items.slice(0, 5).map((item, idx) => {
           const pos = positions[idx];
+          const img = itemImages[item.name];
+
           return (
             <motion.button
               key={item.name}
               onClick={() => onItemTap(idx)}
-              initial={{ opacity: 0, y: 30, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.6, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{
-                delay: 0.15 + idx * 0.1,
-                duration: 0.6,
+                delay: 0.12 + idx * 0.08,
+                duration: 0.5,
                 ease: [0.22, 1, 0.36, 1],
               }}
               className="absolute active:scale-95 transition-transform touch-manipulation group"
               style={{
                 top: pos.top,
                 left: pos.left,
-                width: pos.w,
+                width: pos.size,
                 zIndex: pos.z,
-                transform: `rotate(${pos.rotate}deg)`,
               }}
             >
-              {/* Food image — floating, no container */}
-              <div className="relative">
-                {heroImage ? (
+              {/* Food image — floating, transparent PNG, soft shadow */}
+              <motion.div
+                className="relative"
+                style={{
+                  transform: `rotate(${pos.rotate}deg)`,
+                  filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.15))",
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {img ? (
                   <img
-                    src={heroImage}
+                    src={img}
                     alt={item.name}
-                    className="w-full aspect-square object-cover drop-shadow-[0_8px_24px_rgba(0,0,0,0.15)] group-hover:drop-shadow-[0_12px_32px_rgba(0,0,0,0.2)] transition-all duration-300"
-                    style={{
-                      borderRadius: "18% 22% 20% 24%",
-                      objectPosition: `${25 + idx * 18}% ${15 + idx * 12}%`,
-                    }}
+                    loading="lazy"
+                    width={512}
+                    height={512}
+                    className="w-full aspect-square object-contain"
+                    draggable={false}
                   />
                 ) : (
-                  <div
-                    className="w-full aspect-square bg-gradient-to-br from-[#e8ddd0] to-[#d4c5b2] flex items-center justify-center drop-shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
-                    style={{ borderRadius: "18% 22% 20% 24%" }}
-                  >
+                  <div className="w-full aspect-square flex items-center justify-center">
                     <span className="text-5xl font-black text-foreground/[0.06] select-none">
                       {item.name.charAt(0)}
                     </span>
                   </div>
                 )}
+              </motion.div>
 
-                {/* Tag — floating badge, no container */}
-                {item.tag && (
-                  <span
-                    className="absolute -top-1.5 -right-1 text-[7px] px-1.5 py-0.5 font-black uppercase tracking-wider"
-                    style={{
-                      color:
-                        item.tag === "Bestseller"
-                          ? "#b45309"
-                          : item.tag === "Chef's Pick"
-                          ? "#be123c"
-                          : "#1d4ed8",
-                      transform: "rotate(3deg)",
-                    }}
-                  >
-                    {item.tag === "Chef's Pick" && (
-                      <Star
-                        size={7}
-                        className="inline mr-0.5 -mt-px"
-                        fill="currentColor"
-                      />
-                    )}
-                    {item.tag}
-                  </span>
-                )}
-              </div>
-
-              {/* Name + price — floating text, no box */}
+              {/* Floating label — name + price, no container */}
               <div
-                className="mt-1 pl-1"
-                style={{ transform: `rotate(${-pos.rotate * 0.3}deg)` }}
+                className="mt-0.5"
+                style={{
+                  textAlign:
+                    pos.labelSide === "left"
+                      ? "left"
+                      : pos.labelSide === "right"
+                      ? "right"
+                      : "center",
+                }}
               >
-                <p className="text-foreground/80 font-bold text-[11px] leading-tight truncate text-left">
+                <p
+                  className="font-bold text-[10px] leading-tight truncate"
+                  style={{ color: "rgba(0,0,0,0.7)" }}
+                >
                   {item.name}
                 </p>
                 <p
-                  className="font-black text-[12px] text-left"
+                  className="font-black text-[11px]"
                   style={{ color: accentColor }}
                 >
                   ₹{item.price}
@@ -202,7 +187,7 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
         })}
       </div>
 
-      {/* Page edge — book spine effect */}
+      {/* Book spine edge effects */}
       <div className="absolute top-0 bottom-0 right-0 w-[2px] bg-gradient-to-l from-foreground/[0.08] to-transparent" />
       <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-foreground/[0.03]" />
     </div>

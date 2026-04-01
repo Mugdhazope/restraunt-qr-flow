@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { MenuItem } from "@/data/menuData";
+import { itemImages } from "./menuImages";
 
 interface MenuItemDetailProps {
   item: MenuItem;
@@ -15,9 +16,9 @@ interface MenuItemDetailProps {
 }
 
 /**
- * Editorial item detail — no cards, no containers.
- * Large floating food image with typography below on plain background.
- * Inspired by Apple product pages / luxury restaurant menus.
+ * Full-screen item detail — inspired by the reference.
+ * Large floating food image on cream background.
+ * Big bold name, price, description. No cards or containers.
  */
 const MenuItemDetail = ({
   item,
@@ -36,10 +37,11 @@ const MenuItemDetail = ({
   };
 
   const accentColor = isNest ? "#047857" : "#dc2626";
+  const img = itemImages[item.name] || heroImage;
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 bg-gradient-to-b from-[#f5f0eb] to-[#ece5db]"
+      className="fixed inset-0 z-50 bg-[#f0ebe4]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -52,7 +54,7 @@ const MenuItemDetail = ({
         dragElastic={0.12}
         onDragEnd={handleDragEnd}
       >
-        {/* Back button — floating */}
+        {/* Back button */}
         <motion.button
           onClick={onBack}
           initial={{ opacity: 0, x: -20 }}
@@ -64,7 +66,7 @@ const MenuItemDetail = ({
           <ArrowLeft size={16} className="text-foreground" />
         </motion.button>
 
-        {/* Counter — floating */}
+        {/* Counter */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -74,35 +76,29 @@ const MenuItemDetail = ({
           {currentIndex + 1} / {totalItems}
         </motion.div>
 
-        {/* Large floating food image — no container */}
-        <div className="flex-shrink-0 flex items-center justify-center pt-20 pb-4 px-8">
+        {/* Large floating food image — no container, transparent BG */}
+        <div className="flex-shrink-0 flex items-center justify-center pt-20 pb-2 px-10">
           <motion.div
-            initial={{ scale: 0.7, opacity: 0, y: 40 }}
+            initial={{ scale: 0.6, opacity: 0, y: 30 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             transition={{
-              duration: 0.7,
+              duration: 0.6,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="relative w-[65vw] max-w-[280px]"
+            className="relative w-[60vw] max-w-[260px]"
+            style={{
+              filter: "drop-shadow(0 16px 40px rgba(0,0,0,0.18))",
+            }}
           >
-            {heroImage ? (
+            {img ? (
               <img
-                src={heroImage}
+                src={img}
                 alt={item.name}
-                className="w-full aspect-square object-cover"
-                style={{
-                  borderRadius: "22% 28% 24% 20%",
-                  filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.18))",
-                }}
+                className="w-full aspect-square object-contain"
+                draggable={false}
               />
             ) : (
-              <div
-                className="w-full aspect-square bg-gradient-to-br from-[#e8ddd0] to-[#cfc0ad] flex items-center justify-center"
-                style={{
-                  borderRadius: "22% 28% 24% 20%",
-                  filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.12))",
-                }}
-              >
+              <div className="w-full aspect-square flex items-center justify-center">
                 <span className="text-[80px] font-black text-foreground/[0.04] select-none">
                   {item.name.charAt(0)}
                 </span>
@@ -115,7 +111,7 @@ const MenuItemDetail = ({
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.4 }}
-                className="absolute -bottom-2 -right-3 text-[9px] font-black uppercase tracking-wider"
+                className="absolute -bottom-1 -right-2 text-[9px] font-black uppercase tracking-wider"
                 style={{
                   color:
                     item.tag === "Bestseller"
@@ -139,21 +135,22 @@ const MenuItemDetail = ({
           </motion.div>
         </div>
 
-        {/* Typography content — no containers, just text on page */}
+        {/* Typography — name, price, description. No containers. */}
         <div className="flex-1 px-8 overflow-y-auto">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            transition={{ delay: 0.15, duration: 0.5 }}
+            className="text-center"
           >
-            <p className="text-foreground/25 text-[9px] font-bold uppercase tracking-[0.25em] mb-2">
-              {categoryName}
-            </p>
-            <h1 className="text-[32px] font-black text-foreground tracking-tight leading-[1.1]">
+            <h1
+              className="text-[28px] font-black tracking-tight leading-[1.1] uppercase"
+              style={{ color: "rgba(0,0,0,0.85)" }}
+            >
               {item.name}
             </h1>
             <p
-              className="text-[28px] font-black mt-3 tracking-tight"
+              className="text-[24px] font-black mt-1 tracking-tight"
               style={{ color: accentColor }}
             >
               ₹{item.price}
@@ -161,10 +158,10 @@ const MenuItemDetail = ({
           </motion.div>
 
           <motion.p
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.5 }}
-            className="text-foreground/45 text-[15px] leading-[1.7] mt-6 font-light"
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="text-foreground/45 text-[14px] leading-[1.7] mt-4 font-light text-center"
           >
             {item.description}
           </motion.p>
@@ -173,15 +170,15 @@ const MenuItemDetail = ({
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="inline-block mt-5 text-emerald-700 text-[11px] font-bold uppercase tracking-[0.15em]"
+              transition={{ delay: 0.45 }}
+              className="block mt-4 text-emerald-700 text-[11px] font-bold uppercase tracking-[0.15em] text-center"
             >
               🌿 Jain available
             </motion.span>
           )}
         </div>
 
-        {/* Bottom nav — minimal, floating */}
+        {/* Bottom nav */}
         <div className="px-8 pb-8 pt-3 flex items-center justify-between">
           <button
             onClick={onPrev || undefined}
