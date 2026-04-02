@@ -6,6 +6,8 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { categoryImages } from "@/components/menu/menuImages";
 import MenuBookPage from "@/components/menu/MenuBookPage";
 import MenuItemDetail from "@/components/menu/MenuItemDetail";
+import MenuDesktop from "@/components/menu/MenuDesktop";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface FlatPage {
   categoryName: string;
@@ -37,10 +39,38 @@ function buildPages(menu: { name: string; items: MenuItem[] }[]): FlatPage[] {
 const Menu = () => {
   const { restaurantId } = useParams<{ restaurantId: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const resolvedId =
     restaurantId && restaurants[restaurantId] ? restaurantId : "doughandjoe";
   const restaurant = restaurants[resolvedId];
+
+  if (!restaurant) {
+    return (
+      <div className="fixed inset-0 bg-[#f0ebe4] flex items-center justify-center">
+        <p className="text-foreground/60 text-lg">Menu not available</p>
+      </div>
+    );
+  }
+
+  // Desktop: full scroll GSAP experience
+  if (!isMobile) {
+    return <MenuDesktop restaurant={restaurant} resolvedId={resolvedId} />;
+  }
+
+  // Mobile: page-flip book experience
+  return <MobileMenu restaurant={restaurant} resolvedId={resolvedId} />;
+};
+
+/** Mobile page-flip menu — extracted for clarity */
+const MobileMenu = ({
+  restaurant,
+  resolvedId,
+}: {
+  restaurant: (typeof restaurants)[string];
+  resolvedId: string;
+}) => {
+  const navigate = useNavigate();
   const menu = restaurant.menu;
   const pages = buildPages(menu);
   const isNest = resolvedId === "thenest";
@@ -75,7 +105,6 @@ const Menu = () => {
     else flipTo("prev");
   };
 
-  // Flatten all items for detail navigation
   const allItems = pages.flatMap((p, pi) =>
     p.items.map((item, ii) => ({
       item,
@@ -93,18 +122,10 @@ const Menu = () => {
       )
     : -1;
 
-  if (!restaurant || pages.length === 0) {
+  if (pages.length === 0) {
     return (
       <div className="fixed inset-0 bg-[#f0ebe4] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-foreground/60 text-lg">Menu not available</p>
-          <button
-            onClick={() => navigate(`/scan/${resolvedId}/checked-in`)}
-            className="mt-4 text-sm underline text-foreground/40"
-          >
-            ← Go back
-          </button>
-        </div>
+        <p className="text-foreground/60 text-lg">Menu not available</p>
       </div>
     );
   }
@@ -151,7 +172,7 @@ const Menu = () => {
 
   return (
     <div className="fixed inset-0 bg-[#f0ebe4] flex flex-col overflow-hidden">
-      {/* Top bar — brand header */}
+      {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 pt-5 pb-3">
         <button
           onClick={() => navigate(`/scan/${resolvedId}/checked-in`)}
@@ -198,7 +219,7 @@ const Menu = () => {
         </div>
       </div>
 
-      {/* Book area with perspective flip */}
+      {/* Book area */}
       <div
         className="flex-1 relative mt-16 mb-20 mx-3"
         style={{ perspective: "1200px" }}
@@ -226,7 +247,6 @@ const Menu = () => {
           }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Page shadow during flip */}
           <div
             className="absolute inset-0 pointer-events-none z-20 rounded-2xl"
             style={{
@@ -236,7 +256,6 @@ const Menu = () => {
               transition: "background 0.3s",
             }}
           />
-
           <MenuBookPage
             page={page}
             isNest={isNest}
@@ -246,7 +265,6 @@ const Menu = () => {
           />
         </motion.div>
 
-        {/* Page curl shadow during flip */}
         {isFlipping && (
           <div
             className="absolute inset-y-0 w-8 z-30 pointer-events-none"
@@ -263,7 +281,7 @@ const Menu = () => {
         )}
       </div>
 
-      {/* Bottom navigation */}
+      {/* Bottom nav */}
       <div className="absolute bottom-0 left-0 right-0 z-40 pb-6 pt-3 bg-gradient-to-t from-[#f0ebe4] via-[#f0ebe4]/90 to-transparent">
         <div className="flex items-center justify-center gap-5 px-6">
           <button
@@ -273,8 +291,6 @@ const Menu = () => {
           >
             <ChevronLeft size={18} className="text-foreground/60" />
           </button>
-
-          {/* Page dots */}
           <div className="flex items-center gap-1.5 max-w-[200px] overflow-hidden">
             {pages.map((_, i) => (
               <button
@@ -302,7 +318,6 @@ const Menu = () => {
               </button>
             ))}
           </div>
-
           <button
             onClick={() => flipTo("next")}
             disabled={currentPage === pages.length - 1 || isFlipping}
@@ -311,8 +326,6 @@ const Menu = () => {
             <ChevronRight size={18} className="text-foreground/60" />
           </button>
         </div>
-
-        {/* Page label */}
         <p
           className="text-center mt-1.5 tracking-[0.15em] uppercase"
           style={{
