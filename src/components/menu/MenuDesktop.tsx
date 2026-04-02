@@ -255,19 +255,21 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
             const img = firstItem ? itemImages[firstItem.name] : null;
             if (!img) return null;
             const positions = [
-              { top: "15%", left: "5%", size: "180px", rotate: -12 },
-              { top: "10%", right: "8%", size: "160px", rotate: 15 },
-              { bottom: "18%", left: "8%", size: "140px", rotate: 8 },
-              { bottom: "12%", right: "5%", size: "170px", rotate: -10 },
+              { top: "15%", left: "5%", size: "180px", rot: -12 },
+              { top: "10%", right: "8%", size: "160px", rot: 15 },
+              { bottom: "18%", left: "8%", size: "140px", rot: 8 },
+              { bottom: "12%", right: "5%", size: "170px", rot: -10 },
             ];
             const pos = positions[i];
+            const { rot, size, ...cssPos } = pos;
             return (
               <div
                 key={i}
                 className="absolute hero-float-img opacity-[0.15]"
                 style={{
-                  ...pos,
-                  width: pos.size,
+                  ...cssPos,
+                  width: size,
+                  transform: `rotate(${rot}deg)`,
                   filter: "drop-shadow(0 12px 30px rgba(0,0,0,0.2))",
                 }}
               >
