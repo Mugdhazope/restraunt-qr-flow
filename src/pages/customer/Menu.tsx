@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { restaurants, MenuItem } from "@/data/menuData";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { categoryImages } from "@/components/menu/menuImages";
 import MenuBookPage from "@/components/menu/MenuBookPage";
@@ -43,18 +43,16 @@ const Menu = () => {
   const restaurant = restaurants[resolvedId];
   const menu = restaurant.menu;
   const pages = buildPages(menu);
+  const isNest = resolvedId === "thenest";
+  const accentColor = isNest ? "#047857" : "#c41e24";
 
   const [currentPage, setCurrentPage] = useState(0);
   const [flipDirection, setFlipDirection] = useState<"next" | "prev">("next");
   const [isFlipping, setIsFlipping] = useState(false);
-
-  // Item detail state
   const [detailItem, setDetailItem] = useState<{
     pageIdx: number;
     itemIdx: number;
   } | null>(null);
-
-  const isNest = resolvedId === "thenest";
 
   const flipTo = useCallback(
     (dir: "next" | "prev") => {
@@ -77,24 +75,27 @@ const Menu = () => {
     else flipTo("prev");
   };
 
-  const openItem = (pageIdx: number, itemIdx: number) => {
-    setDetailItem({ pageIdx, itemIdx });
-  };
-
   // Flatten all items for detail navigation
   const allItems = pages.flatMap((p, pi) =>
-    p.items.map((item, ii) => ({ item, pageIdx: pi, itemIdx: ii, cat: p.categoryName, heroImage: p.heroImage }))
+    p.items.map((item, ii) => ({
+      item,
+      pageIdx: pi,
+      itemIdx: ii,
+      cat: p.categoryName,
+      heroImage: p.heroImage,
+    }))
   );
 
   const currentDetailFlat = detailItem
     ? allItems.findIndex(
-        (a) => a.pageIdx === detailItem.pageIdx && a.itemIdx === detailItem.itemIdx
+        (a) =>
+          a.pageIdx === detailItem.pageIdx && a.itemIdx === detailItem.itemIdx
       )
     : -1;
 
   if (!restaurant || pages.length === 0) {
     return (
-      <div className="fixed inset-0 bg-[#f5f0eb] flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#f0ebe4] flex items-center justify-center">
         <div className="text-center">
           <p className="text-foreground/60 text-lg">Menu not available</p>
           <button
@@ -122,7 +123,10 @@ const Menu = () => {
           currentDetailFlat > 0
             ? () => {
                 const prev = allItems[currentDetailFlat - 1];
-                setDetailItem({ pageIdx: prev.pageIdx, itemIdx: prev.itemIdx });
+                setDetailItem({
+                  pageIdx: prev.pageIdx,
+                  itemIdx: prev.itemIdx,
+                });
               }
             : null
         }
@@ -130,7 +134,10 @@ const Menu = () => {
           currentDetailFlat < allItems.length - 1
             ? () => {
                 const next = allItems[currentDetailFlat + 1];
-                setDetailItem({ pageIdx: next.pageIdx, itemIdx: next.itemIdx });
+                setDetailItem({
+                  pageIdx: next.pageIdx,
+                  itemIdx: next.itemIdx,
+                });
               }
             : null
         }
@@ -143,27 +150,55 @@ const Menu = () => {
   const page = pages[currentPage];
 
   return (
-    <div className="fixed inset-0 bg-[#f5f0eb] flex flex-col overflow-hidden">
-      {/* Top bar */}
+    <div className="fixed inset-0 bg-[#f0ebe4] flex flex-col overflow-hidden">
+      {/* Top bar — brand header */}
       <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 pt-5 pb-3">
         <button
           onClick={() => navigate(`/scan/${resolvedId}/checked-in`)}
-          className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+          className="w-10 h-10 rounded-full bg-white/60 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
+          style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}
         >
-          <ArrowLeft size={18} className="text-foreground" />
+          <ArrowLeft size={16} className="text-foreground" />
         </button>
         <div className="text-center">
-          <h1 className="text-foreground font-bold text-sm">{restaurant.name}</h1>
-          <p className="text-foreground/40 text-[10px]">{restaurant.tagline}</p>
+          <h1
+            className="tracking-[0.08em] uppercase leading-none"
+            style={{
+              fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontSize: "14px",
+              fontWeight: 900,
+              color: accentColor,
+            }}
+          >
+            {restaurant.name}
+          </h1>
+          <p
+            className="text-[9px] mt-0.5 tracking-wider uppercase"
+            style={{
+              color: "rgba(0,0,0,0.3)",
+              fontFamily: "'Georgia', serif",
+            }}
+          >
+            {restaurant.tagline}
+          </p>
         </div>
-        <div className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-lg">
-          <span className="text-foreground text-xs font-bold">
+        <div
+          className="w-10 h-10 rounded-full bg-white/60 backdrop-blur-md flex items-center justify-center"
+          style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}
+        >
+          <span
+            className="text-[11px] font-bold"
+            style={{
+              color: "rgba(0,0,0,0.5)",
+              fontFamily: "'Georgia', serif",
+            }}
+          >
             {currentPage + 1}/{pages.length}
           </span>
         </div>
       </div>
 
-      {/* Book area */}
+      {/* Book area with perspective flip */}
       <div
         className="flex-1 relative mt-16 mb-20 mx-3"
         style={{ perspective: "1200px" }}
@@ -174,31 +209,29 @@ const Menu = () => {
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={0.15}
           onDragEnd={handleSwipe}
-          className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
-          style={{ transformStyle: "preserve-3d" }}
+          className="absolute inset-0 rounded-2xl overflow-hidden"
+          style={{
+            transformStyle: "preserve-3d",
+            boxShadow:
+              "0 20px 60px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)",
+          }}
           initial={{
             rotateY: flipDirection === "next" ? 90 : -90,
             opacity: 0.3,
           }}
-          animate={{
-            rotateY: 0,
-            opacity: 1,
-          }}
+          animate={{ rotateY: 0, opacity: 1 }}
           exit={{
             rotateY: flipDirection === "next" ? -90 : 90,
             opacity: 0.3,
           }}
-          transition={{
-            duration: 0.5,
-            ease: [0.22, 1, 0.36, 1],
-          }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Page shadow during animation */}
+          {/* Page shadow during flip */}
           <div
             className="absolute inset-0 pointer-events-none z-20 rounded-2xl"
             style={{
               background: isFlipping
-                ? "linear-gradient(to right, rgba(0,0,0,0.08), transparent 30%, transparent 70%, rgba(0,0,0,0.05))"
+                ? "linear-gradient(to right, rgba(0,0,0,0.06), transparent 25%, transparent 75%, rgba(0,0,0,0.04))"
                 : "none",
               transition: "background 0.3s",
             }}
@@ -207,11 +240,13 @@ const Menu = () => {
           <MenuBookPage
             page={page}
             isNest={isNest}
-            onItemTap={(itemIdx) => openItem(currentPage, itemIdx)}
+            onItemTap={(itemIdx) =>
+              setDetailItem({ pageIdx: currentPage, itemIdx })
+            }
           />
         </motion.div>
 
-        {/* Page curl shadow */}
+        {/* Page curl shadow during flip */}
         {isFlipping && (
           <div
             className="absolute inset-y-0 w-8 z-30 pointer-events-none"
@@ -220,8 +255,8 @@ const Menu = () => {
               left: flipDirection === "prev" ? 0 : undefined,
               background:
                 flipDirection === "next"
-                  ? "linear-gradient(to left, rgba(0,0,0,0.12), transparent)"
-                  : "linear-gradient(to right, rgba(0,0,0,0.12), transparent)",
+                  ? "linear-gradient(to left, rgba(0,0,0,0.1), transparent)"
+                  : "linear-gradient(to right, rgba(0,0,0,0.1), transparent)",
               borderRadius: "0 16px 16px 0",
             }}
           />
@@ -229,14 +264,14 @@ const Menu = () => {
       </div>
 
       {/* Bottom navigation */}
-      <div className="absolute bottom-0 left-0 right-0 z-40 pb-6 pt-3 bg-gradient-to-t from-[#f5f0eb] via-[#f5f0eb]/90 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 z-40 pb-6 pt-3 bg-gradient-to-t from-[#f0ebe4] via-[#f0ebe4]/90 to-transparent">
         <div className="flex items-center justify-center gap-5 px-6">
           <button
             onClick={() => flipTo("prev")}
             disabled={currentPage === 0 || isFlipping}
-            className="w-11 h-11 rounded-full bg-foreground/5 flex items-center justify-center disabled:opacity-20 active:scale-90 transition-all"
+            className="w-11 h-11 rounded-full bg-black/[0.04] flex items-center justify-center disabled:opacity-20 active:scale-90 transition-all"
           >
-            <ChevronLeft size={18} className="text-foreground" />
+            <ChevronLeft size={18} className="text-foreground/60" />
           </button>
 
           {/* Page dots */}
@@ -257,10 +292,12 @@ const Menu = () => {
               >
                 <div
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === currentPage
-                      ? "w-6 bg-foreground/60"
-                      : "w-1.5 bg-foreground/15"
+                    i === currentPage ? "w-6" : "w-1.5"
                   }`}
+                  style={{
+                    background:
+                      i === currentPage ? accentColor : "rgba(0,0,0,0.12)",
+                  }}
                 />
               </button>
             ))}
@@ -269,14 +306,22 @@ const Menu = () => {
           <button
             onClick={() => flipTo("next")}
             disabled={currentPage === pages.length - 1 || isFlipping}
-            className="w-11 h-11 rounded-full bg-foreground/5 flex items-center justify-center disabled:opacity-20 active:scale-90 transition-all"
+            className="w-11 h-11 rounded-full bg-black/[0.04] flex items-center justify-center disabled:opacity-20 active:scale-90 transition-all"
           >
-            <ChevronRight size={18} className="text-foreground" />
+            <ChevronRight size={18} className="text-foreground/60" />
           </button>
         </div>
 
         {/* Page label */}
-        <p className="text-foreground/30 text-[10px] font-medium text-center mt-1.5 tracking-wider uppercase">
+        <p
+          className="text-center mt-1.5 tracking-[0.15em] uppercase"
+          style={{
+            fontFamily: "'Georgia', serif",
+            fontSize: "9px",
+            fontWeight: 700,
+            color: "rgba(0,0,0,0.25)",
+          }}
+        >
           {page.pageLabel}
         </p>
       </div>
