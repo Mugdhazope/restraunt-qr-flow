@@ -215,9 +215,8 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                 <p
                   className="leading-tight truncate"
                   style={{
-                    fontFamily: "'Georgia', 'Times New Roman', serif",
-                    fontWeight: 900,
-                    fontSize: "clamp(9px, 2.5vw, 12px)",
+                    fontFamily: BRAND_FONT,
+                    fontSize: "clamp(10px, 2.8vw, 13px)",
                     color: "rgba(0,0,0,0.75)",
                     letterSpacing: "0.02em",
                   }}
