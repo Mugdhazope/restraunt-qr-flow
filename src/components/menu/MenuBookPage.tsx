@@ -166,7 +166,7 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                     <span
                       className="font-black select-none"
                       style={{
-                        fontFamily: "'Georgia', serif",
+                        fontFamily: BRAND_FONT,
                         fontSize: "clamp(40px, 12vw, 72px)",
                         color: "rgba(0,0,0,0.04)",
                       }}
