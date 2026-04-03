@@ -227,9 +227,9 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                 <p
                   className="font-black"
                   style={{
-                    fontSize: "clamp(10px, 2.8vw, 13px)",
+                    fontSize: "clamp(11px, 3vw, 14px)",
                     color: accentColor,
-                    fontFamily: "'Georgia', serif",
+                    fontFamily: BRAND_FONT,
                   }}
                 >
                   ₹{item.price}
