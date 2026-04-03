@@ -105,9 +105,8 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
         <h2
           className="tracking-[0.15em] uppercase leading-none"
           style={{
-            fontFamily: "'Georgia', 'Times New Roman', serif",
+            fontFamily: BRAND_FONT,
             fontSize: "clamp(18px, 5vw, 26px)",
-            fontWeight: 900,
             color: accentColor,
             textShadow: "0 1px 2px rgba(0,0,0,0.06)",
           }}
