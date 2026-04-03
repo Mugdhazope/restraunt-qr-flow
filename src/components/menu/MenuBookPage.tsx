@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 import { MenuItem } from "@/data/menuData";
 import { itemImages } from "./menuImages";
 
+const BRAND_FONT = "'Righteous', cursive";
+const SERIF_FONT = "'Playfair Display', 'Georgia', serif";
+
 interface MenuBookPageProps {
   page: {
     categoryName: string;
@@ -77,9 +80,8 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
             key={row}
             className="whitespace-nowrap"
             style={{
-              fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontFamily: BRAND_FONT,
               fontSize: "clamp(28px, 7vw, 48px)",
-              fontWeight: 900,
               lineHeight: 1.1,
               color: "#000",
               letterSpacing: "0.05em",
@@ -103,9 +105,8 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
         <h2
           className="tracking-[0.15em] uppercase leading-none"
           style={{
-            fontFamily: "'Georgia', 'Times New Roman', serif",
+            fontFamily: BRAND_FONT,
             fontSize: "clamp(18px, 5vw, 26px)",
-            fontWeight: 900,
             color: accentColor,
             textShadow: "0 1px 2px rgba(0,0,0,0.06)",
           }}
@@ -165,7 +166,7 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                     <span
                       className="font-black select-none"
                       style={{
-                        fontFamily: "'Georgia', serif",
+                        fontFamily: BRAND_FONT,
                         fontSize: "clamp(40px, 12vw, 72px)",
                         color: "rgba(0,0,0,0.04)",
                       }}
@@ -214,9 +215,8 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                 <p
                   className="leading-tight truncate"
                   style={{
-                    fontFamily: "'Georgia', 'Times New Roman', serif",
-                    fontWeight: 900,
-                    fontSize: "clamp(9px, 2.5vw, 12px)",
+                    fontFamily: BRAND_FONT,
+                    fontSize: "clamp(10px, 2.8vw, 13px)",
                     color: "rgba(0,0,0,0.75)",
                     letterSpacing: "0.02em",
                   }}
@@ -226,9 +226,9 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                 <p
                   className="font-black"
                   style={{
-                    fontSize: "clamp(10px, 2.8vw, 13px)",
+                    fontSize: "clamp(11px, 3vw, 14px)",
                     color: accentColor,
-                    fontFamily: "'Georgia', serif",
+                    fontFamily: BRAND_FONT,
                   }}
                 >
                   ₹{item.price}
