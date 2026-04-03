@@ -80,9 +80,8 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
             key={row}
             className="whitespace-nowrap"
             style={{
-              fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontFamily: BRAND_FONT,
               fontSize: "clamp(28px, 7vw, 48px)",
-              fontWeight: 900,
               lineHeight: 1.1,
               color: "#000",
               letterSpacing: "0.05em",
