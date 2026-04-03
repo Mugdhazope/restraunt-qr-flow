@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 import { MenuItem } from "@/data/menuData";
 import { itemImages } from "./menuImages";
 
+const BRAND_FONT = "'Righteous', cursive";
+const SERIF_FONT = "'Playfair Display', 'Georgia', serif";
+
 interface MenuBookPageProps {
   page: {
     categoryName: string;

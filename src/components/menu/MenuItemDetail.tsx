@@ -3,6 +3,9 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { MenuItem } from "@/data/menuData";
 import { itemImages } from "./menuImages";
 
+const BRAND_FONT = "'Righteous', cursive";
+const SERIF_FONT = "'Playfair Display', 'Georgia', serif";
+
 interface MenuItemDetailProps {
   item: MenuItem;
   heroImage?: string;
@@ -15,11 +18,6 @@ interface MenuItemDetailProps {
   totalItems: number;
 }
 
-/**
- * Item detail — Apple/Nike product page style.
- * Repeated typography texture background.
- * Large floating food image. Bold retro name + price. No cards.
- */
 const MenuItemDetail = ({
   item,
   heroImage,
@@ -38,8 +36,6 @@ const MenuItemDetail = ({
 
   const accentColor = isNest ? "#047857" : "#c41e24";
   const img = itemImages[item.name] || heroImage;
-
-  // Build typography background word
   const bgWord = categoryName.split(" ").slice(-1)[0].toUpperCase();
 
   return (
@@ -50,16 +46,15 @@ const MenuItemDetail = ({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Typography texture background — repeated pattern */}
+      {/* Typography texture background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.025]">
         {Array.from({ length: 18 }).map((_, row) => (
           <div
             key={row}
             className="whitespace-nowrap"
             style={{
-              fontFamily: "'Georgia', 'Times New Roman', serif",
-              fontSize: "clamp(24px, 6vw, 40px)",
-              fontWeight: 900,
+              fontFamily: BRAND_FONT,
+              fontSize: "clamp(28px, 7vw, 44px)",
               lineHeight: 1.15,
               color: "#000",
               letterSpacing: "0.06em",
@@ -98,24 +93,24 @@ const MenuItemDetail = ({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
           className="absolute top-7 right-5 z-20 text-foreground/25 text-[11px] font-medium tracking-wider"
-          style={{ fontFamily: "'Georgia', serif" }}
+          style={{ fontFamily: BRAND_FONT }}
         >
           {currentIndex + 1} / {totalItems}
         </motion.div>
 
-        {/* Hero image — large, floating, no container */}
-        <div className="flex-shrink-0 flex items-center justify-center pt-20 pb-0 px-8">
+        {/* EXTREME ZOOM Hero image — takes up almost the whole screen */}
+        <div className="flex-1 flex items-center justify-center px-4 pt-14 pb-0 relative">
           <motion.div
             key={item.name}
-            initial={{ scale: 0.5, opacity: 0, y: 40 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
+            initial={{ scale: 0.3, opacity: 0, rotate: -8 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{
-              duration: 0.7,
+              duration: 0.8,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="relative w-[65vw] max-w-[280px]"
+            className="relative w-[90vw] max-w-[400px]"
             style={{
-              filter: "drop-shadow(0 20px 50px rgba(0,0,0,0.2))",
+              filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.25))",
             }}
           >
             {img ? (
@@ -130,9 +125,8 @@ const MenuItemDetail = ({
                 <span
                   className="select-none"
                   style={{
-                    fontFamily: "'Georgia', serif",
-                    fontSize: "100px",
-                    fontWeight: 900,
+                    fontFamily: BRAND_FONT,
+                    fontSize: "140px",
                     color: "rgba(0,0,0,0.03)",
                   }}
                 >
@@ -143,51 +137,50 @@ const MenuItemDetail = ({
           </motion.div>
         </div>
 
-        {/* Text content — editorial typography, no containers */}
-        <div className="flex-1 px-8 pt-4 overflow-y-auto">
+        {/* Text content — compact at bottom, overlapping image area */}
+        <div className="relative z-10 px-6 pb-2 -mt-6">
           {/* Category label */}
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-center tracking-[0.2em] uppercase"
+            className="text-center tracking-[0.25em] uppercase"
             style={{
-              fontFamily: "'Georgia', serif",
-              fontSize: "10px",
-              fontWeight: 700,
+              fontFamily: SERIF_FONT,
+              fontSize: "9px",
+              fontWeight: 400,
+              fontStyle: "italic",
               color: "rgba(0,0,0,0.3)",
             }}
           >
             {categoryName}
           </motion.p>
 
-          {/* Item name — big, bold, retro */}
+          {/* Item name — Bauhaus style */}
           <motion.h1
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25, duration: 0.5 }}
-            className="text-center mt-2 leading-[1.05]"
+            className="text-center mt-1 leading-[1]"
             style={{
-              fontFamily: "'Georgia', 'Times New Roman', serif",
-              fontSize: "clamp(26px, 7vw, 34px)",
-              fontWeight: 900,
+              fontFamily: BRAND_FONT,
+              fontSize: "clamp(24px, 7vw, 32px)",
               color: "rgba(0,0,0,0.85)",
-              letterSpacing: "-0.01em",
+              letterSpacing: "0.02em",
             }}
           >
-            {item.name.toUpperCase()}
+            {item.name}
           </motion.h1>
 
-          {/* Price — accent color, bold */}
+          {/* Price */}
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-center mt-2"
+            className="text-center mt-1"
             style={{
-              fontFamily: "'Georgia', serif",
-              fontSize: "clamp(22px, 5.5vw, 28px)",
-              fontWeight: 900,
+              fontFamily: BRAND_FONT,
+              fontSize: "clamp(20px, 5vw, 26px)",
               color: accentColor,
             }}
           >
@@ -199,11 +192,13 @@ const MenuItemDetail = ({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.5 }}
-            className="text-center mt-4 leading-[1.7] font-light"
+            className="text-center mt-2 leading-[1.6]"
             style={{
-              fontSize: "14px",
-              color: "rgba(0,0,0,0.4)",
-              maxWidth: "320px",
+              fontFamily: SERIF_FONT,
+              fontStyle: "italic",
+              fontSize: "12px",
+              color: "rgba(0,0,0,0.35)",
+              maxWidth: "300px",
               marginLeft: "auto",
               marginRight: "auto",
             }}
@@ -216,12 +211,13 @@ const MenuItemDetail = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.45 }}
-            className="flex items-center justify-center gap-3 mt-5"
+            className="flex items-center justify-center gap-2 mt-3"
           >
             {item.tag && (
               <span
-                className="text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full"
+                className="text-[8px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full"
                 style={{
+                  fontFamily: BRAND_FONT,
                   background:
                     item.tag === "Bestseller"
                       ? "#fef3c7"
@@ -242,20 +238,21 @@ const MenuItemDetail = ({
             )}
             {item.jain && (
               <span
-                className="text-[9px] font-bold uppercase tracking-[0.12em] px-3 py-1.5 rounded-full"
+                className="text-[8px] uppercase tracking-[0.12em] px-2.5 py-1 rounded-full"
                 style={{
+                  fontFamily: BRAND_FONT,
                   background: "#d1fae5",
                   color: "#065f46",
                 }}
               >
-                🌿 Jain Available
+                🌿 Jain
               </span>
             )}
           </motion.div>
         </div>
 
-        {/* Bottom nav — prev/next */}
-        <div className="px-8 pb-8 pt-3 flex items-center justify-between">
+        {/* Bottom nav */}
+        <div className="px-8 pb-6 pt-2 flex items-center justify-between">
           <button
             onClick={onPrev || undefined}
             disabled={!onPrev}
@@ -269,15 +266,10 @@ const MenuItemDetail = ({
               <div
                 key={i}
                 className={`h-[3px] rounded-full transition-all duration-300 ${
-                  i === currentIndex
-                    ? "w-5"
-                    : "w-[3px]"
+                  i === currentIndex ? "w-5" : "w-[3px]"
                 }`}
                 style={{
-                  background:
-                    i === currentIndex
-                      ? accentColor
-                      : "rgba(0,0,0,0.08)",
+                  background: i === currentIndex ? accentColor : "rgba(0,0,0,0.08)",
                 }}
               />
             ))}

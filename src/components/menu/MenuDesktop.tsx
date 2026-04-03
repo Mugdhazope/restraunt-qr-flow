@@ -14,7 +14,7 @@ interface MenuDesktopProps {
   resolvedId: string;
 }
 
-const BRAND_FONT = "'Fredoka One', cursive";
+const BRAND_FONT = "'Righteous', cursive";
 const SERIF_FONT = "'Playfair Display', 'Georgia', serif";
 
 /* Alternating editorial layouts for category sections */
