@@ -36,7 +36,10 @@ const MenuItemDetail = ({
 
   const accentColor = isNest ? "#047857" : "#c41e24";
   const img = itemImages[item.name] || heroImage;
-  const bgWord = categoryName.split(" ").slice(-1)[0].toUpperCase();
+  const catWord = categoryName.split(" ").slice(-1)[0].toUpperCase();
+
+  // Determine if this is a plated item (pizzas, pastas, appetizers)
+  const isPlatedCategory = /pizza|pasta|appetizer|non veg/i.test(categoryName);
 
   return (
     <motion.div
@@ -46,28 +49,6 @@ const MenuItemDetail = ({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Typography texture background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.025]">
-        {Array.from({ length: 18 }).map((_, row) => (
-          <div
-            key={row}
-            className="whitespace-nowrap"
-            style={{
-              fontFamily: BRAND_FONT,
-              fontSize: "clamp(28px, 7vw, 44px)",
-              lineHeight: 1.15,
-              color: "#000",
-              letterSpacing: "0.06em",
-              transform: `translateX(${row % 2 === 0 ? "-8%" : "12%"})`,
-            }}
-          >
-            {Array.from({ length: 10 }).map((_, col) => (
-              <span key={col} className="mr-5">{bgWord}</span>
-            ))}
-          </div>
-        ))}
-      </div>
-
       <motion.div
         className="h-full flex flex-col relative z-10"
         drag="x"
@@ -98,17 +79,67 @@ const MenuItemDetail = ({
           {currentIndex + 1} / {totalItems}
         </motion.div>
 
-        {/* EXTREME ZOOM Hero image — takes up almost the whole screen */}
-        <div className="flex-1 flex items-center justify-center px-4 pt-14 pb-0 relative">
+        {/* ═══ 3 BIG LINES — Category name with decreasing opacity ═══ */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+          className="absolute top-14 left-0 right-0 z-[1] pointer-events-none overflow-hidden"
+        >
+          {[1, 0.5, 0.2].map((opacity, i) => (
+            <p
+              key={i}
+              className="leading-[0.95] uppercase"
+              style={{
+                fontFamily: BRAND_FONT,
+                fontSize: "clamp(36px, 11vw, 56px)",
+                color: accentColor,
+                opacity,
+                paddingLeft: "20px",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {categoryName.toUpperCase()}
+            </p>
+          ))}
+        </motion.div>
+
+        {/* "IT'S NEW" badge for new items */}
+        {item.isNew && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="absolute top-14 right-4 z-20 pointer-events-none"
+          >
+            {[1, 0.5, 0.25].map((opacity, i) => (
+              <p
+                key={i}
+                className="leading-[0.95] uppercase text-right"
+                style={{
+                  fontFamily: BRAND_FONT,
+                  fontSize: "clamp(16px, 5vw, 22px)",
+                  color: accentColor,
+                  opacity,
+                }}
+              >
+                IT'S NEW
+              </p>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Hero image */}
+        <div className={`flex-1 flex items-center relative ${isPlatedCategory ? "justify-end pr-0" : "justify-center px-4"} pt-[140px] pb-0`}>
           <motion.div
             key={item.name}
-            initial={{ scale: 0.3, opacity: 0, rotate: -8 }}
+            initial={{ scale: 0.3, opacity: 0, rotate: isPlatedCategory ? 5 : -8 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{
               duration: 0.8,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="relative w-[90vw] max-w-[400px]"
+            className={`relative ${isPlatedCategory ? "w-[110vw] -mr-[25vw] max-w-[500px]" : "w-[90vw] max-w-[400px]"}`}
             style={{
               filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.25))",
             }}
@@ -117,7 +148,7 @@ const MenuItemDetail = ({
               <img
                 src={img}
                 alt={item.name}
-                className="w-full aspect-square object-contain"
+                className={`w-full ${isPlatedCategory ? "aspect-square object-cover rounded-full" : "aspect-square object-contain"}`}
                 draggable={false}
               />
             ) : (
@@ -137,39 +168,22 @@ const MenuItemDetail = ({
           </motion.div>
         </div>
 
-        {/* Text content — compact at bottom, overlapping image area */}
-        <div className="relative z-10 px-6 pb-2 -mt-6">
-          {/* Category label */}
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-center tracking-[0.25em] uppercase"
-            style={{
-              fontFamily: SERIF_FONT,
-              fontSize: "9px",
-              fontWeight: 400,
-              fontStyle: "italic",
-              color: "rgba(0,0,0,0.3)",
-            }}
-          >
-            {categoryName}
-          </motion.p>
-
-          {/* Item name — Bauhaus style */}
+        {/* Text content — compact at bottom */}
+        <div className="relative z-10 px-6 pb-2 -mt-4">
+          {/* Item name */}
           <motion.h1
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25, duration: 0.5 }}
-            className="text-center mt-1 leading-[1]"
+            className="leading-[1] mt-1"
             style={{
               fontFamily: BRAND_FONT,
-              fontSize: "clamp(24px, 7vw, 32px)",
+              fontSize: "clamp(26px, 8vw, 36px)",
               color: "rgba(0,0,0,0.85)",
-              letterSpacing: "0.02em",
+              letterSpacing: "0.01em",
             }}
           >
-            {item.name}
+            {item.name.toUpperCase()}
           </motion.h1>
 
           {/* Price */}
@@ -177,10 +191,10 @@ const MenuItemDetail = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-center mt-1"
+            className="mt-1"
             style={{
               fontFamily: BRAND_FONT,
-              fontSize: "clamp(20px, 5vw, 26px)",
+              fontSize: "clamp(22px, 6vw, 30px)",
               color: accentColor,
             }}
           >
@@ -192,15 +206,13 @@ const MenuItemDetail = ({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.5 }}
-            className="text-center mt-2 leading-[1.6]"
+            className="mt-2 leading-[1.6]"
             style={{
               fontFamily: SERIF_FONT,
               fontStyle: "italic",
               fontSize: "12px",
-              color: "rgba(0,0,0,0.35)",
+              color: "rgba(0,0,0,0.4)",
               maxWidth: "300px",
-              marginLeft: "auto",
-              marginRight: "auto",
             }}
           >
             {item.description}
@@ -211,7 +223,7 @@ const MenuItemDetail = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.45 }}
-            className="flex items-center justify-center gap-2 mt-3"
+            className="flex items-center gap-2 mt-3"
           >
             {item.tag && (
               <span
@@ -234,6 +246,30 @@ const MenuItemDetail = ({
               >
                 {item.tag === "Bestseller" ? "⭐ " : item.tag === "Chef's Pick" ? "👨‍🍳 " : "🔥 "}
                 {item.tag}
+              </span>
+            )}
+            {item.isNew && (
+              <span
+                className="text-[8px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full"
+                style={{
+                  fontFamily: BRAND_FONT,
+                  background: "#d1fae5",
+                  color: "#065f46",
+                }}
+              >
+                ✨ New
+              </span>
+            )}
+            {item.featured && (
+              <span
+                className="text-[8px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full"
+                style={{
+                  fontFamily: BRAND_FONT,
+                  background: "#fef3c7",
+                  color: "#92400e",
+                }}
+              >
+                ⭐ Featured
               </span>
             )}
             {item.jain && (
