@@ -4,6 +4,8 @@ export interface MenuItem {
   price: number;
   tag?: string;
   jain?: boolean;
+  featured?: boolean;
+  isNew?: boolean;
 }
 
 export interface MenuCategory {
@@ -33,8 +35,8 @@ export const restaurants: Record<string, RestaurantConfig> = {
       {
         name: "Wood Fired Pizzas",
         items: [
-          { name: "Classic Margherita", description: "San Marzano Tomato Sauce, Fior Di Latte, Fresh Basil", price: 650, tag: "Bestseller", jain: true },
-          { name: "Mamma Mia Truffle", description: "Alfredo Sauce, Mushrooms, Fior di Latte, Truffle Oil, Fresh Parsley", price: 680, tag: "Chef's Pick" },
+          { name: "Classic Margherita", description: "San Marzano Tomato Sauce, Fior Di Latte, Fresh Basil", price: 650, tag: "Bestseller", jain: true, featured: true },
+          { name: "Mamma Mia Truffle", description: "Alfredo Sauce, Mushrooms, Fior di Latte, Truffle Oil, Fresh Parsley", price: 680, tag: "Chef's Pick", isNew: true },
           { name: "Pesto Genovese", description: "Basil Pesto, Fior di Latte, Cherry Tomatoes, Baby Spinach, Parmesan Shavings", price: 650, jain: true },
           { name: "White Whisper", description: "Alfredo Sauce, Fior di Latte, Garlic-infused Olive oil and Rosemary", price: 600 },
           { name: "Garden Party", description: "San Marzano Tomato Sauce, Fior di Latte, Charred Zucchini, Bell peppers, Eggplant, Onion, and Basil Pesto Drizzle", price: 650, jain: true },
@@ -47,9 +49,9 @@ export const restaurants: Record<string, RestaurantConfig> = {
       {
         name: "Non Veg Appetizers",
         items: [
-          { name: "Crispy Parm Poppers", description: "Juicy Chicken Bites Coated in Parmesan and Herbs, Served with Sriracha Mayo", price: 450 },
+          { name: "Crispy Parm Poppers", description: "Juicy Chicken Bites Coated in Parmesan and Herbs, Served with Sriracha Mayo", price: 450, isNew: true },
           { name: "Lemon Pepper Wings", description: "Oven-baked Wings Tossed in Lemon, Pepper, and Butter, Served with Ranch", price: 480, tag: "Popular" },
-          { name: "Lamb Meatballs", description: "Juicy Lamb Meatballs in House Marinara Sauce, Served with Sourdough Bread", price: 650 },
+          { name: "Lamb Meatballs", description: "Juicy Lamb Meatballs in House Marinara Sauce, Served with Sourdough Bread", price: 650, featured: true },
           { name: "Fish & Chips", description: "Classic Battered Fish, Served with House Fries & Tartar Sauce", price: 600 },
           { name: "Diavola Prawns", description: "Jalapeño-spiked Marinara, Prawns, Fresh Basil, Served with Sourdough Bread", price: 620 },
           { name: "Butter Garlic Prawns", description: "Juicy Prawns Tossed in Butter, Garlic, and Herbs, Served with Sourdough Bread", price: 620 },
@@ -67,8 +69,8 @@ export const restaurants: Record<string, RestaurantConfig> = {
       {
         name: "Shakes & Drinks",
         items: [
-          { name: "Cookie Dough Shake", description: "Vanilla ice cream, cookie chunks, whipped cream", price: 319, tag: "Bestseller" },
-          { name: "Nutella Shake", description: "Rich chocolate hazelnut, topped with brownie", price: 339 },
+          { name: "Cookie Dough Shake", description: "Vanilla ice cream, cookie chunks, whipped cream", price: 319, tag: "Bestseller", featured: true },
+          { name: "Nutella Shake", description: "Rich chocolate hazelnut, topped with brownie", price: 339, isNew: true },
           { name: "Fresh Lemonade", description: "Classic lemon, mint, soda option available", price: 179 },
           { name: "Cold Coffee", description: "Espresso, milk, ice, chocolate drizzle", price: 249, tag: "Popular" },
         ],
