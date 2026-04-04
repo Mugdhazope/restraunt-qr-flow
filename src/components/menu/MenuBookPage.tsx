@@ -3,7 +3,6 @@ import { MenuItem } from "@/data/menuData";
 import { itemImages } from "./menuImages";
 
 const BRAND_FONT = "'Righteous', cursive";
-const SERIF_FONT = "'Playfair Display', 'Georgia', serif";
 
 interface MenuBookPageProps {
   page: {
@@ -16,14 +15,7 @@ interface MenuBookPageProps {
   onItemTap: (itemIndex: number) => void;
 }
 
-/**
- * Editorial / magazine poster page.
- * Floating transparent food PNGs scattered asymmetrically on a cream page.
- * Large typography watermark. No cards, no grids, no containers.
- */
-
-// Asymmetric positions for floating items — editorial collage style
-// Each layout: top, left, width, rotation, z-index, label anchor
+// Asymmetric positions for floating items
 const LAYOUTS: {
   top: string;
   left: string;
@@ -32,27 +24,22 @@ const LAYOUTS: {
   z: number;
   labelAnchor: "tl" | "tr" | "bl" | "br" | "bc";
 }[][] = [
-  // 1 item — hero centered
   [{ top: "18%", left: "10%", w: "75%", rotate: -2, z: 3, labelAnchor: "bc" }],
-  // 2 items
   [
     { top: "4%", left: "2%", w: "55%", rotate: -5, z: 2, labelAnchor: "br" },
     { top: "44%", left: "35%", w: "58%", rotate: 4, z: 3, labelAnchor: "bl" },
   ],
-  // 3 items
   [
     { top: "2%", left: "25%", w: "50%", rotate: 3, z: 3, labelAnchor: "bc" },
     { top: "34%", left: "-2%", w: "44%", rotate: -6, z: 2, labelAnchor: "br" },
     { top: "40%", left: "48%", w: "48%", rotate: 5, z: 4, labelAnchor: "bl" },
   ],
-  // 4 items
   [
     { top: "0%", left: "0%", w: "44%", rotate: -4, z: 2, labelAnchor: "br" },
     { top: "2%", left: "50%", w: "40%", rotate: 5, z: 3, labelAnchor: "bl" },
     { top: "40%", left: "5%", w: "38%", rotate: 6, z: 4, labelAnchor: "br" },
     { top: "44%", left: "46%", w: "46%", rotate: -3, z: 5, labelAnchor: "bl" },
   ],
-  // 5 items — full editorial collage
   [
     { top: "0%", left: "3%", w: "38%", rotate: -5, z: 2, labelAnchor: "br" },
     { top: "1%", left: "52%", w: "34%", rotate: 6, z: 3, labelAnchor: "bl" },
@@ -68,59 +55,82 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
   const positions = LAYOUTS[count - 1] || LAYOUTS[4];
   const accentColor = isNest ? "#047857" : "#c41e24";
 
-  // Build repeated typography background text
-  const bgWord = categoryName.split(" ").slice(-1)[0].toUpperCase();
+  // Check for any "new" items on this page
+  const hasNewItem = items.some((i) => i.isNew);
+  const hasFeaturedItem = items.some((i) => i.featured);
 
   return (
     <div className="h-full w-full bg-[#f0ebe4] relative overflow-hidden select-none">
-      {/* Typography texture background — repeated word pattern */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03]">
-        {Array.from({ length: 12 }).map((_, row) => (
-          <div
-            key={row}
-            className="whitespace-nowrap"
-            style={{
-              fontFamily: BRAND_FONT,
-              fontSize: "clamp(28px, 7vw, 48px)",
-              lineHeight: 1.1,
-              color: "#000",
-              letterSpacing: "0.05em",
-              transform: `translateX(${row % 2 === 0 ? "-10%" : "5%"})`,
-            }}
-          >
-            {Array.from({ length: 8 }).map((_, col) => (
-              <span key={col} className="mr-6">{bgWord}</span>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* Category title — bold retro style at top */}
+      {/* ═══ 3 BIG LINES — Category name with decreasing opacity ═══ */}
       <motion.div
-        initial={{ opacity: 0, y: -15 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.6 }}
-        className="absolute top-5 left-0 right-0 z-10 text-center px-4"
+        className="absolute top-4 left-0 right-0 z-10 px-3 pointer-events-none"
       >
-        <h2
-          className="tracking-[0.15em] uppercase leading-none"
-          style={{
-            fontFamily: BRAND_FONT,
-            fontSize: "clamp(18px, 5vw, 26px)",
-            color: accentColor,
-            textShadow: "0 1px 2px rgba(0,0,0,0.06)",
-          }}
-        >
-          {categoryName.toUpperCase()}
-        </h2>
+        {[0.85, 0.35, 0.12].map((opacity, i) => (
+          <p
+            key={i}
+            className="leading-[0.92] uppercase"
+            style={{
+              fontFamily: BRAND_FONT,
+              fontSize: "clamp(20px, 6vw, 30px)",
+              color: accentColor,
+              opacity,
+              letterSpacing: "0.04em",
+            }}
+          >
+            {categoryName.toUpperCase()}
+          </p>
+        ))}
         <div
-          className="mx-auto mt-2 h-[2px] w-12 rounded-full"
-          style={{ background: accentColor, opacity: 0.3 }}
+          className="mt-1.5 h-[2px] w-10 rounded-full"
+          style={{ background: accentColor, opacity: 0.2 }}
         />
       </motion.div>
 
-      {/* Floating food items — sticker-style, no containers */}
-      <div className="absolute inset-0 pt-16 pb-4 px-3">
+      {/* "IT'S NEW" watermark for pages with new items */}
+      {hasNewItem && (
+        <div className="absolute top-4 right-3 z-[1] pointer-events-none">
+          {[0.6, 0.3, 0.12, 0.05].map((opacity, i) => (
+            <p
+              key={i}
+              className="leading-[0.95] uppercase text-right"
+              style={{
+                fontFamily: BRAND_FONT,
+                fontSize: "clamp(12px, 3.5vw, 16px)",
+                color: accentColor,
+                opacity,
+              }}
+            >
+              IT'S NEW
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* "FEATURED" watermark */}
+      {hasFeaturedItem && !hasNewItem && (
+        <div className="absolute top-4 right-3 z-[1] pointer-events-none">
+          {[0.5, 0.25, 0.1].map((opacity, i) => (
+            <p
+              key={i}
+              className="leading-[0.95] uppercase text-right"
+              style={{
+                fontFamily: BRAND_FONT,
+                fontSize: "clamp(10px, 3vw, 14px)",
+                color: accentColor,
+                opacity,
+              }}
+            >
+              FEATURED
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Floating food items */}
+      <div className="absolute inset-0 pt-[90px] pb-4 px-3">
         {items.slice(0, 5).map((item, idx) => {
           const pos = positions[idx];
           const img = itemImages[item.name];
@@ -144,7 +154,6 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                 zIndex: pos.z,
               }}
             >
-              {/* Food image — floating, transparent, soft drop shadow */}
               <motion.div
                 className="relative"
                 style={{
@@ -176,7 +185,7 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                   </div>
                 )}
 
-                {/* Tag badge — floating near image */}
+                {/* Tag badge */}
                 {item.tag && (
                   <span
                     className="absolute -top-1 -right-1 text-[7px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full"
@@ -196,9 +205,37 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
                     {item.tag}
                   </span>
                 )}
+
+                {/* "NEW" badge */}
+                {item.isNew && (
+                  <span
+                    className="absolute -bottom-1 -left-1 text-[7px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full"
+                    style={{
+                      background: "#10b981",
+                      color: "#fff",
+                      transform: `rotate(${-pos.rotate - 3}deg)`,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    }}
+                  >
+                    NEW
+                  </span>
+                )}
+
+                {/* "FEATURED" star */}
+                {item.featured && (
+                  <span
+                    className="absolute -top-1 -left-1 text-[9px]"
+                    style={{
+                      transform: `rotate(${-pos.rotate}deg)`,
+                      filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.2))",
+                    }}
+                  >
+                    ⭐
+                  </span>
+                )}
               </motion.div>
 
-              {/* Floating typography label — name overlapping image slightly, price nearby */}
+              {/* Label */}
               <div
                 className="relative -mt-2"
                 style={{
@@ -239,7 +276,7 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
         })}
       </div>
 
-      {/* Subtle page edge effects */}
+      {/* Page edge effects */}
       <div className="absolute top-0 bottom-0 right-0 w-[2px] bg-gradient-to-l from-black/[0.06] to-transparent" />
       <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-black/[0.02]" />
     </div>
