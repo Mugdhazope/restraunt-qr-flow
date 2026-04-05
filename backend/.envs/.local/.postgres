@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=kotak
+POSTGRES_USER=fktnYcydVNjieaZxRGXUhVoFvDSHmyMb
+POSTGRES_PASSWORD=D2uWzhuXENPIvCgoGMh8qvhx3Isp9HFInfd6GsJCRGhgMIlpNJNR5UNZCvJiJ6zk
