@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { outlets } from "@/data/mockData";
 import { useRestaurant } from "@/context/RestaurantContext";
+import { getTheme } from "@/data/restaurantThemes";
 import {
   LayoutDashboard, Users, MessageSquare, Star, Megaphone,
   Zap, QrCode, BarChart3, Settings, Search, Bell, ChevronDown,
-  Menu, X, LogOut, UtensilsCrossed, Upload
+  Menu, X, LogOut, UtensilsCrossed, Upload, Store
 } from "lucide-react";
 
 const navItems = [
@@ -27,6 +28,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [outletDropdown, setOutletDropdown] = useState(false);
   const { selectedOutlet, setSelectedOutlet } = useRestaurant();
+  const theme = getTheme(selectedOutlet.restaurantId);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -42,6 +44,48 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-muted hover:text-sidebar-foreground">
             <X size={20} />
           </button>
+        </div>
+
+        {/* Restaurant Switcher in sidebar */}
+        <div className="px-3 py-3 border-b border-sidebar-border">
+          <div className="relative">
+            <button
+              onClick={() => setOutletDropdown(!outletDropdown)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-sidebar-accent/50"
+              style={{ background: `${theme.primary}15` }}
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: theme.primary }}>
+                <Store size={14} className="text-white" />
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-sidebar-foreground text-sm font-semibold truncate">{selectedOutlet.name}</p>
+                <p className="text-sidebar-muted text-[10px] truncate">{selectedOutlet.location}</p>
+              </div>
+              <ChevronDown size={14} className={`text-sidebar-muted transition-transform ${outletDropdown ? "rotate-180" : ""}`} />
+            </button>
+            {outletDropdown && (
+              <div className="absolute left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
+                {outlets.map((o) => {
+                  const oTheme = getTheme(o.restaurantId);
+                  return (
+                    <button
+                      key={o.id}
+                      onClick={() => { setSelectedOutlet(o); setOutletDropdown(false); }}
+                      className={`w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors flex items-center gap-3 ${selectedOutlet.id === o.id ? "bg-muted/50" : ""}`}
+                    >
+                      <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: oTheme.primary }}>
+                        <Store size={10} className="text-white" />
+                      </div>
+                      <div>
+                        <p className={`font-medium ${selectedOutlet.id === o.id ? "text-foreground" : "text-foreground/80"}`}>{o.name}</p>
+                        <p className="text-muted-foreground text-xs">{o.location}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
@@ -98,28 +142,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <button
-                onClick={() => setOutletDropdown(!outletDropdown)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
-              >
-                {selectedOutlet.name}
-                <ChevronDown size={14} className="text-muted-foreground" />
-              </button>
-              {outletDropdown && (
-                <div className="absolute right-0 mt-1 w-56 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
-                  {outlets.map((o) => (
-                    <button
-                      key={o.id}
-                      onClick={() => { setSelectedOutlet(o); setOutletDropdown(false); }}
-                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors ${selectedOutlet.id === o.id ? "text-primary font-medium" : "text-foreground"}`}
-                    >
-                      <p className="font-medium">{o.name}</p>
-                      <p className="text-muted-foreground text-xs">{o.location}</p>
-                    </button>
-                  ))}
-                </div>
-              )}
+            {/* Active restaurant indicator */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: `${theme.primary}15`, color: theme.primary }}>
+              <div className="w-2 h-2 rounded-full" style={{ background: theme.primary }} />
+              {selectedOutlet.name}
             </div>
 
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
