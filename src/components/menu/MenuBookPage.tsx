@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
 import { MenuItem } from "@/data/menuData";
+import { RestaurantTheme } from "@/data/restaurantThemes";
 import { itemImages } from "./menuImages";
-
-const BRAND_FONT = "'Righteous', cursive";
 
 interface MenuBookPageProps {
   page: {
@@ -11,7 +10,7 @@ interface MenuBookPageProps {
     heroImage?: string;
     pageLabel: string;
   };
-  isNest: boolean;
+  theme: RestaurantTheme;
   onItemTap: (itemIndex: number) => void;
 }
 
@@ -49,19 +48,17 @@ const LAYOUTS: {
   ],
 ];
 
-const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
+const MenuBookPage = ({ page, theme, onItemTap }: MenuBookPageProps) => {
   const { items, categoryName } = page;
   const count = Math.min(items.length, 5);
   const positions = LAYOUTS[count - 1] || LAYOUTS[4];
-  const accentColor = isNest ? "#047857" : "#c41e24";
 
-  // Check for any "new" items on this page
   const hasNewItem = items.some((i) => i.isNew);
   const hasFeaturedItem = items.some((i) => i.featured);
 
   return (
-    <div className="h-full w-full bg-[#f0ebe4] relative overflow-hidden select-none">
-      {/* ═══ 3 BIG LINES — Category name with decreasing opacity ═══ */}
+    <div className="h-full w-full relative overflow-hidden select-none" style={{ background: theme.background }}>
+      {/* 3 BIG LINES — Category name with decreasing opacity */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -73,9 +70,9 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
             key={i}
             className="leading-[0.92] uppercase"
             style={{
-              fontFamily: BRAND_FONT,
+              fontFamily: theme.headingFont,
               fontSize: "clamp(20px, 6vw, 30px)",
-              color: accentColor,
+              color: theme.primary,
               opacity,
               letterSpacing: "0.04em",
             }}
@@ -85,24 +82,15 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
         ))}
         <div
           className="mt-1.5 h-[2px] w-10 rounded-full"
-          style={{ background: accentColor, opacity: 0.2 }}
+          style={{ background: theme.primary, opacity: 0.2 }}
         />
       </motion.div>
 
-      {/* "IT'S NEW" watermark for pages with new items */}
+      {/* "IT'S NEW" watermark */}
       {hasNewItem && (
         <div className="absolute top-4 right-3 z-[1] pointer-events-none">
           {[0.6, 0.3, 0.12, 0.05].map((opacity, i) => (
-            <p
-              key={i}
-              className="leading-[0.95] uppercase text-right"
-              style={{
-                fontFamily: BRAND_FONT,
-                fontSize: "clamp(12px, 3.5vw, 16px)",
-                color: accentColor,
-                opacity,
-              }}
-            >
+            <p key={i} className="leading-[0.95] uppercase text-right" style={{ fontFamily: theme.headingFont, fontSize: "clamp(12px, 3.5vw, 16px)", color: theme.primary, opacity }}>
               IT'S NEW
             </p>
           ))}
@@ -113,16 +101,7 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
       {hasFeaturedItem && !hasNewItem && (
         <div className="absolute top-4 right-3 z-[1] pointer-events-none">
           {[0.5, 0.25, 0.1].map((opacity, i) => (
-            <p
-              key={i}
-              className="leading-[0.95] uppercase text-right"
-              style={{
-                fontFamily: BRAND_FONT,
-                fontSize: "clamp(10px, 3vw, 14px)",
-                color: accentColor,
-                opacity,
-              }}
-            >
+            <p key={i} className="leading-[0.95] uppercase text-right" style={{ fontFamily: theme.headingFont, fontSize: "clamp(10px, 3vw, 14px)", color: theme.primary, opacity }}>
               FEATURED
             </p>
           ))}
@@ -141,95 +120,54 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
               onClick={() => onItemTap(idx)}
               initial={{ opacity: 0, scale: 0.5, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{
-                delay: 0.15 + idx * 0.1,
-                duration: 0.6,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              transition={{ delay: 0.15 + idx * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="absolute active:scale-95 transition-transform touch-manipulation group"
-              style={{
-                top: pos.top,
-                left: pos.left,
-                width: pos.w,
-                zIndex: pos.z,
-              }}
+              style={{ top: pos.top, left: pos.left, width: pos.w, zIndex: pos.z }}
             >
               <motion.div
                 className="relative"
-                style={{
-                  transform: `rotate(${pos.rotate}deg)`,
-                  filter: "drop-shadow(0 10px 25px rgba(0,0,0,0.18))",
-                }}
+                style={{ transform: `rotate(${pos.rotate}deg)`, filter: "drop-shadow(0 10px 25px rgba(0,0,0,0.18))" }}
                 whileTap={{ scale: 0.93 }}
               >
                 {img ? (
-                  <img
-                    src={img}
-                    alt={item.name}
-                    loading="lazy"
-                    className="w-full aspect-square object-contain"
-                    draggable={false}
-                  />
+                  <img src={img} alt={item.name} loading="lazy" className="w-full aspect-square object-contain" draggable={false} />
                 ) : (
                   <div className="w-full aspect-square flex items-center justify-center">
-                    <span
-                      className="font-black select-none"
-                      style={{
-                        fontFamily: BRAND_FONT,
-                        fontSize: "clamp(40px, 12vw, 72px)",
-                        color: "rgba(0,0,0,0.04)",
-                      }}
-                    >
+                    <span className="font-black select-none" style={{ fontFamily: theme.headingFont, fontSize: "clamp(40px, 12vw, 72px)", color: "rgba(0,0,0,0.04)" }}>
                       {item.name.charAt(0)}
                     </span>
                   </div>
                 )}
 
-                {/* Tag badge */}
-                {item.tag && (
-                  <span
-                    className="absolute -top-1 -right-1 text-[7px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full"
-                    style={{
-                      background:
-                        item.tag === "Bestseller"
-                          ? "#fbbf24"
-                          : item.tag === "Chef's Pick"
-                          ? "#f43f5e"
-                          : "#3b82f6",
-                      color:
-                        item.tag === "Bestseller" ? "#78350f" : "#fff",
-                      transform: `rotate(${-pos.rotate + 3}deg)`,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                    }}
-                  >
-                    {item.tag}
-                  </span>
-                )}
+                {item.tag && (() => {
+                  const tagKey = item.tag === "Chef's Pick" ? "tagChefsPick" : item.tag === "Bestseller" ? "tagBestseller" : "tagPopular";
+                  const tagStyle = theme[tagKey as keyof RestaurantTheme] as { bg: string; text: string };
+                  return (
+                    <span
+                      className="absolute -top-1 -right-1 text-[7px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full"
+                      style={{
+                        background: tagStyle.bg,
+                        color: tagStyle.text,
+                        transform: `rotate(${-pos.rotate + 3}deg)`,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      {item.tag}
+                    </span>
+                  );
+                })()}
 
-                {/* "NEW" badge */}
                 {item.isNew && (
                   <span
                     className="absolute -bottom-1 -left-1 text-[7px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full"
-                    style={{
-                      background: "#10b981",
-                      color: "#fff",
-                      transform: `rotate(${-pos.rotate - 3}deg)`,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                    }}
+                    style={{ background: theme.tagNew.bg, color: theme.tagNew.text, transform: `rotate(${-pos.rotate - 3}deg)`, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
                   >
                     NEW
                   </span>
                 )}
 
-                {/* "FEATURED" star */}
                 {item.featured && (
-                  <span
-                    className="absolute -top-1 -left-1 text-[9px]"
-                    style={{
-                      transform: `rotate(${-pos.rotate}deg)`,
-                      filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.2))",
-                    }}
-                  >
+                  <span className="absolute -top-1 -left-1 text-[9px]" style={{ transform: `rotate(${-pos.rotate}deg)`, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.2))" }}>
                     ⭐
                   </span>
                 )}
@@ -239,35 +177,15 @@ const MenuBookPage = ({ page, isNest, onItemTap }: MenuBookPageProps) => {
               <div
                 className="relative -mt-2"
                 style={{
-                  textAlign:
-                    pos.labelAnchor === "bl" || pos.labelAnchor === "tl"
-                      ? "left"
-                      : pos.labelAnchor === "br" || pos.labelAnchor === "tr"
-                      ? "right"
-                      : "center",
+                  textAlign: pos.labelAnchor === "bl" || pos.labelAnchor === "tl" ? "left" : pos.labelAnchor === "br" || pos.labelAnchor === "tr" ? "right" : "center",
                   paddingLeft: pos.labelAnchor.includes("l") ? "4px" : 0,
                   paddingRight: pos.labelAnchor.includes("r") ? "4px" : 0,
                 }}
               >
-                <p
-                  className="leading-tight truncate"
-                  style={{
-                    fontFamily: BRAND_FONT,
-                    fontSize: "clamp(10px, 2.8vw, 13px)",
-                    color: "rgba(0,0,0,0.75)",
-                    letterSpacing: "0.02em",
-                  }}
-                >
+                <p className="leading-tight truncate" style={{ fontFamily: theme.headingFont, fontSize: "clamp(10px, 2.8vw, 13px)", color: theme.text, letterSpacing: "0.02em" }}>
                   {item.name}
                 </p>
-                <p
-                  className="font-black"
-                  style={{
-                    fontSize: "clamp(11px, 3vw, 14px)",
-                    color: accentColor,
-                    fontFamily: BRAND_FONT,
-                  }}
-                >
+                <p className="font-black" style={{ fontSize: "clamp(11px, 3vw, 14px)", color: theme.primary, fontFamily: theme.headingFont }}>
                   ₹{item.price}
                 </p>
               </div>
