@@ -139,12 +139,15 @@ const MenuBookPage = ({ page, theme, onItemTap }: MenuBookPageProps) => {
                   </div>
                 )}
 
-                {item.tag && (
+                {item.tag && (() => {
+                  const tagKey = item.tag === "Chef's Pick" ? "tagChefsPick" : item.tag === "Bestseller" ? "tagBestseller" : "tagPopular";
+                  const tagStyle = theme[tagKey as keyof RestaurantTheme] as { bg: string; text: string };
+                  return (
                   <span
                     className="absolute -top-1 -right-1 text-[7px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full"
                     style={{
-                      background: theme[`tag${item.tag === "Chef's Pick" ? "ChefsPick" : item.tag}` as keyof RestaurantTheme]?.bg || theme.tagPopular.bg,
-                      color: (theme[`tag${item.tag === "Chef's Pick" ? "ChefsPick" : item.tag}` as keyof RestaurantTheme] as any)?.text || "#fff",
+                      background: tagStyle.bg,
+                      color: tagStyle.text,
                       transform: `rotate(${-pos.rotate + 3}deg)`,
                       boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                     }}
