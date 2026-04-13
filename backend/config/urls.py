@@ -9,6 +9,7 @@ from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularRedocView
 from drf_spectacular.views import SpectacularSwaggerView
 
+from kotak.integrations.whatsapp.webhook_views import WhatsAppWebhookView
 from kotak.users.api.auth import ObtainAuthTokenView
 
 urlpatterns = [
@@ -23,6 +24,7 @@ urlpatterns = [
     # User management
     path("users/", include("kotak.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
+    path("webhooks/whatsapp/", WhatsAppWebhookView.as_view(), name="whatsapp-webhook"),
     # Your stuff: custom urls includes go here
     # ...
     # Media files
@@ -35,6 +37,10 @@ urlpatterns += [
     path("api/", include("config.api_router")),
     # DRF auth token
     path("api/auth-token/", ObtainAuthTokenView.as_view(), name="obtain_auth_token"),
+    path(
+        "api/",
+        include(("kotak.accounts.api.urls", "accounts_api"), namespace="accounts_api"),
+    ),
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
     path(
         "api/docs/",

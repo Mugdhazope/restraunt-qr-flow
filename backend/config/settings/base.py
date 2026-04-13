@@ -1,4 +1,6 @@
-# ruff: noqa: ERA001, E501
+from datetime import timedelta
+
+# ruff: noqa: ERA001, E501, E402
 """Base settings to build other settings files upon."""
 
 from pathlib import Path
@@ -85,7 +87,12 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "kotak.users",
-    # Your stuff: custom apps go here
+    "kotak.restaurants",
+    "kotak.customers",
+    "kotak.accounts",
+    "kotak.menu",
+    "kotak.feedback",
+    "kotak.campaigns",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -264,6 +271,22 @@ LOGGING = {
 REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
 REDIS_SSL = REDIS_URL.startswith("rediss://")
 
+# WhatsApp Cloud API (Graph). Set WHATSAPP_GRAPH_API_VERSION to match Meta API Setup curl (e.g. v25.0).
+WHATSAPP_GRAPH_API_VERSION = env("WHATSAPP_GRAPH_API_VERSION", default="v22.0").strip().lstrip("/")
+WHATSAPP_ACCESS_TOKEN = env("WHATSAPP_ACCESS_TOKEN", default="").strip()
+WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="").strip()
+WHATSAPP_WEBHOOK_VERIFY_TOKEN = env("WHATSAPP_WEBHOOK_VERIFY_TOKEN", default="").strip()
+FEEDBACK_PROMPT_DELAY_SECONDS = env.int("FEEDBACK_PROMPT_DELAY_SECONDS", default=1800)
+# Used when Restaurant.google_review_link is empty (optional dev convenience).
+DEFAULT_GOOGLE_REVIEW_LINK = env("DEFAULT_GOOGLE_REVIEW_LINK", default="").strip()
+
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_TIMEZONE = TIME_ZONE
+# When True, tasks run in the Django/Celery caller process (no worker). See local.py default for dev.
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+CELERY_TASK_EAGER_PROPAGATES = env.bool("CELERY_TASK_EAGER_PROPAGATES", default=True)
 
 # django-allauth
 # ------------------------------------------------------------------------------
@@ -290,6 +313,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -345,3 +369,9 @@ SPECTACULAR_SETTINGS = {
 }
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+}

@@ -36,3 +36,5 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore[index]
 MEDIA_URL = "http://media.testserver/"
 # Your stuff...
 # ------------------------------------------------------------------------------
+# Tests patch apply_async; keep async mode off so unmocked paths do not hit the network.
+CELERY_TASK_ALWAYS_EAGER = False

@@ -13,7 +13,12 @@ SECRET_KEY = env(
     default="rRwV6MLP9MnH1w2VUygTydCK5MUfK3nbfKdsg9MRRNxb1LkwkwZYUITC9CTKAvpx",
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]  # noqa: S104
+ALLOWED_HOSTS = [
+    "localhost",
+    "0.0.0.0",
+    "127.0.0.1",
+    ".ngrok-free.dev",
+]  # noqa: S104
 
 # CACHES
 # ------------------------------------------------------------------------------
@@ -68,5 +73,15 @@ if env("USE_DOCKER") == "yes":
 # https://django-extensions.readthedocs.io/en/latest/installation_instructions.html#configuration
 INSTALLED_APPS += ["django_extensions"]
 
+# OpenAPI (Swagger / ReDoc): allow browsing docs without logging in during local dev only.
+# Production keeps IsAuthenticated from base.py.
+SPECTACULAR_SETTINGS = {
+    **SPECTACULAR_SETTINGS,
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+}
+
 # Your stuff...
 # ------------------------------------------------------------------------------
+# Without a Celery worker, feedback tasks stay in Redis forever. Eager mode runs them in-process.
+# Set CELERY_TASK_ALWAYS_EAGER=no in .env when running `celery worker` and you want real async.
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)

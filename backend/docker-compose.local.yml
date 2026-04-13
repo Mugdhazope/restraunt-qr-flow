@@ -1,7 +1,7 @@
 volumes:
   kotak_local_postgres_data: {}
   kotak_local_postgres_data_backups: {}
-  
+
 
 services:
   django:
@@ -11,7 +11,10 @@ services:
     image: kotak_local_django
     container_name: kotak_local_django
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - /app/.venv
       - .:/app:z
@@ -21,6 +24,31 @@ services:
     ports:
       - '8000:8000'
     command: /start
+
+  celeryworker:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: kotak_local_django
+    container_name: kotak_local_celeryworker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - /app/.venv
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    command: /bin/bash -c "celery -A config.celery_app worker -l INFO"
+
+  redis:
+    image: redis:7
+    container_name: kotak_local_redis
+    ports:
+      - '6379:6379'
 
   postgres:
     build:
@@ -33,3 +61,10 @@ services:
       - kotak_local_postgres_data_backups:/backups
     env_file:
       - ./.envs/.local/.postgres
+    healthcheck:
+      # Use the same superuser the image creates (POSTGRES_USER), not the literal "postgres" role.
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
