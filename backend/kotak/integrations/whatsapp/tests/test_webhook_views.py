@@ -7,7 +7,11 @@ from django.urls import reverse
 
 from kotak.integrations.whatsapp.webhook_views import WhatsAppWebhookView
 
-pytestmark = pytest.mark.django_db
+# WA_DISABLED: WhatsApp webhook URL commented out in config/urls.py
+pytestmark = [
+    pytest.mark.django_db,
+    pytest.mark.skip(reason="WA_DISABLED: whatsapp-webhook route commented out"),
+]
 
 
 @pytest.fixture

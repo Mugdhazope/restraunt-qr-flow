@@ -9,7 +9,13 @@ from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularRedocView
 from drf_spectacular.views import SpectacularSwaggerView
 
-from kotak.integrations.whatsapp.webhook_views import WhatsAppWebhookView
+from kotak.dashboard.api.csrf_view import CsrfTokenView
+from kotak.dashboard.api.views import PublicMenuAPIView
+from kotak.layouts.views import PublicLayoutsAPIView
+
+# WA_DISABLED — re-enable WhatsApp webhook with Meta integration
+# from kotak.integrations.whatsapp.webhook_views import WhatsAppWebhookView
+from kotak.users.api.auth import LogoutView
 from kotak.users.api.auth import ObtainAuthTokenView
 
 urlpatterns = [
@@ -24,7 +30,8 @@ urlpatterns = [
     # User management
     path("users/", include("kotak.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
-    path("webhooks/whatsapp/", WhatsAppWebhookView.as_view(), name="whatsapp-webhook"),
+    # WA_DISABLED
+    # path("webhooks/whatsapp/", WhatsAppWebhookView.as_view(), name="whatsapp-webhook"),
     # Your stuff: custom urls includes go here
     # ...
     # Media files
@@ -33,10 +40,23 @@ urlpatterns = [
 
 # API URLS
 urlpatterns += [
+    path("api/csrf/", CsrfTokenView.as_view(), name="api-csrf"),
+    path("api/public/menu/", PublicMenuAPIView.as_view(), name="public-menu"),
+    path(
+        "api/public/menu/<slug:restaurant_slug>/",
+        PublicMenuAPIView.as_view(),
+        name="public-menu-by-slug",
+    ),
+    path(
+        "api/public/layouts/<slug:restaurant_slug>/",
+        PublicLayoutsAPIView.as_view(),
+        name="public-layouts",
+    ),
     # API base url
     path("api/", include("config.api_router")),
     # DRF auth token
     path("api/auth-token/", ObtainAuthTokenView.as_view(), name="obtain_auth_token"),
+    path("api/auth/logout/", LogoutView.as_view(), name="auth_logout"),
     path(
         "api/",
         include(("kotak.accounts.api.urls", "accounts_api"), namespace="accounts_api"),

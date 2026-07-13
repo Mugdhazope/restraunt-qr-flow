@@ -1,27 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RestaurantConfig, MenuItem } from "@/data/menuData";
-import { getTheme, RestaurantTheme } from "@/data/restaurantThemes";
-import { itemImages, categoryImages } from "./menuImages";
+import { RestaurantTheme } from "@/data/restaurantThemes";
+import { itemImageSrc, categoryImages, itemImageScaleStyle } from "./menuImages";
+import { MenuItemBadges, NEW_THIS_WEEK_TITLE } from "./MenuItemBadges";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { lightTap } from "@/lib/haptics";
 
 gsap.registerPlugin(ScrollTrigger);
 
 interface MenuDesktopProps {
   restaurant: RestaurantConfig;
   resolvedId: string;
+  theme: RestaurantTheme;
 }
 
 const SECTION_LAYOUTS = ["hero-left", "collage", "hero-right", "feature-grid"] as const;
 
-const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
+const MenuDesktop = ({ restaurant, resolvedId, theme }: MenuDesktopProps) => {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
-  const theme = getTheme(resolvedId);
 
   const [detailItem, setDetailItem] = useState<{ item: MenuItem; cat: string } | null>(null);
 
@@ -80,22 +82,52 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen overflow-x-hidden" style={{ background: theme.background }}>
+    <div
+      ref={containerRef}
+      className="min-h-screen overflow-x-hidden"
+      style={{
+        background: theme.background,
+        ["--menu-tap-ring" as string]: theme.primary,
+        ["--menu-tap-ring-offset" as string]: theme.background,
+      }}
+    >
       {/* NAV */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 backdrop-blur-2xl" style={{ background: `${theme.background}b3` }}>
-        <button onClick={() => navigate(`/scan/${resolvedId}/checked-in`)} className="flex items-center gap-2 transition-colors" style={{ color: theme.textSecondary }}>
+        <button onClick={() => navigate(`/scan/${resolvedId}`)} className="flex items-center gap-2 transition-colors" style={{ color: theme.textSecondary }}>
           <ArrowLeft size={18} />
-          <span className="text-xs tracking-[0.15em] uppercase font-bold" style={{ fontFamily: theme.serifFont }}>Back</span>
+          <span
+            className="text-xs tracking-[0.15em] uppercase font-bold"
+            style={{ fontFamily: theme.typography.fonts.ui, letterSpacing: theme.typography.letterSpacing.ui, fontWeight: theme.typography.weights.ui }}
+          >
+            Back
+          </span>
         </button>
-        <h1 style={{ fontFamily: theme.headingFont, fontSize: "22px", color: theme.primary, letterSpacing: "0.04em" }}>{restaurant.name}</h1>
-        <span className="text-[10px] tracking-[0.2em] uppercase font-bold" style={{ fontFamily: theme.serifFont, color: theme.textSecondary }}>Menu</span>
+        <h1
+          style={{
+            fontFamily: theme.typography.fonts.heading,
+            fontSize: "22px",
+            color: theme.primary,
+            letterSpacing: theme.typography.letterSpacing.heading,
+            fontWeight: theme.typography.weights.heading,
+          }}
+        >
+          {restaurant.name}
+        </h1>
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-[10px] tracking-[0.2em] uppercase font-bold" style={{ fontFamily: theme.typography.fonts.ui, color: theme.textSecondary, letterSpacing: theme.typography.letterSpacing.ui }}>
+            Menu
+          </span>
+          <span className="text-[9px] tracking-[0.14em] uppercase max-w-[140px] text-right leading-tight opacity-70" style={{ fontFamily: theme.typography.fonts.ui, color: theme.primary }}>
+            Click a dish for full details
+          </span>
+        </div>
       </nav>
 
       {/* HERO */}
       <section ref={heroRef} className="relative h-screen flex items-center justify-center overflow-hidden" onMouseMove={handleMouseMove}>
         <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03] select-none">
           {Array.from({ length: 10 }).map((_, row) => (
-            <div key={row} className="whitespace-nowrap bg-typo" style={{ fontFamily: theme.headingFont, fontSize: "clamp(80px, 12vw, 180px)", lineHeight: 1.05, color: "#000", transform: `translateX(${row % 2 === 0 ? "-8%" : "12%"})` }}>
+            <div key={row} className="whitespace-nowrap bg-typo" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(80px, 12vw, 180px)", lineHeight: 1.05, color: "#000", transform: `translateX(${row % 2 === 0 ? "-8%" : "12%"})` }}>
               {Array.from({ length: 5 }).map((_, col) => (<span key={col} className="mr-16">{restaurant.name.toUpperCase()}</span>))}
             </div>
           ))}
@@ -103,7 +135,7 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
         <div className="absolute inset-0 pointer-events-none">
           {restaurant.menu.slice(0, 5).map((cat, i) => {
             const firstItem = cat.items[0];
-            const img = firstItem ? itemImages[firstItem.name] : null;
+            const img = firstItem ? itemImageSrc(firstItem) : null;
             if (!img) return null;
             const positions = [
               { top: "8%", left: "4%", size: 240, rot: -15 },
@@ -115,18 +147,24 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
             const pos = positions[i];
             const { rot, size, ...cssPos } = pos;
             return (
-              <div key={i} className="absolute hero-float" style={{ ...cssPos, width: `${size}px`, transform: `rotate(${rot}deg)`, filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.18))", opacity: 0.12 }}>
-                <img src={img} alt="" className="w-full aspect-square object-contain" draggable={false} />
+              <div key={i} className="absolute hero-float overflow-hidden" style={{ ...cssPos, width: `${size}px`, transform: `rotate(${rot}deg)`, filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.18))", opacity: 0.12 }}>
+                <img
+                  src={img}
+                  alt=""
+                  className="w-full aspect-square object-contain"
+                  style={firstItem ? itemImageScaleStyle(firstItem) : undefined}
+                  draggable={false}
+                />
               </div>
             );
           })}
         </div>
         <div className="relative z-10 text-center">
-          <h1 className="hero-brand leading-[0.85]" style={{ fontFamily: theme.headingFont, fontSize: "clamp(72px, 14vw, 200px)", color: theme.primary }}>{restaurant.name}</h1>
-          <p className="hero-tagline-text mt-6 tracking-[0.3em] uppercase" style={{ fontFamily: theme.serifFont, fontSize: "14px", fontWeight: 400, color: theme.textSecondary, fontStyle: "italic" }}>{restaurant.tagline}</p>
+          <h1 className="hero-brand leading-[0.85]" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(72px, 14vw, 200px)", color: theme.primary, letterSpacing: theme.typography.letterSpacing.heading }}>{restaurant.name}</h1>
+          <p className="hero-tagline-text mt-6 tracking-[0.3em] uppercase" style={{ fontFamily: theme.typography.fonts.body, fontSize: "14px", fontWeight: theme.typography.weights.body, color: theme.textSecondary, letterSpacing: theme.typography.letterSpacing.ui }}>{restaurant.tagline}</p>
           <div className="hero-scroll-cue mt-20">
             <motion.div animate={{ y: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }} className="mx-auto w-[1px] h-16 bg-gradient-to-b from-transparent via-black/15 to-transparent" />
-            <p className="mt-3 text-[9px] tracking-[0.4em] uppercase" style={{ color: theme.textSecondary, fontFamily: theme.serifFont }}>Scroll to explore</p>
+            <p className="mt-3 text-[9px] tracking-[0.4em] uppercase" style={{ color: theme.textSecondary, fontFamily: theme.typography.fonts.ui, letterSpacing: theme.typography.letterSpacing.ui }}>Scroll to explore</p>
           </div>
         </div>
       </section>
@@ -137,11 +175,11 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
           <div className="max-w-7xl mx-auto px-8 lg:px-16 mb-20">
             <div className="cat-title">
               {[1, 0.4, 0.15].map((opacity, i) => (
-                <h2 key={i} className="leading-[0.92]" style={{ fontFamily: theme.headingFont, fontSize: "clamp(48px, 8vw, 100px)", color: theme.primary, opacity }}>IT'S NEW</h2>
+                <h2 key={i} className="leading-[0.92]" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(48px, 8vw, 100px)", color: theme.primary, opacity, letterSpacing: theme.typography.letterSpacing.heading, fontWeight: theme.typography.weights.heading }}>{NEW_THIS_WEEK_TITLE}</h2>
               ))}
             </div>
             <div className="cat-line mt-5 h-[3px] rounded-full" style={{ background: `linear-gradient(to right, ${theme.primary}, transparent)`, maxWidth: "160px" }} />
-            <p className="cat-subtitle mt-4 tracking-[0.15em] uppercase" style={{ fontFamily: theme.serifFont, fontSize: "12px", color: theme.textSecondary, fontStyle: "italic" }}>New this week — {newItems.length} selections</p>
+            <p className="cat-subtitle mt-4 tracking-[0.15em] uppercase" style={{ fontFamily: theme.typography.fonts.ui, fontSize: "12px", color: theme.textSecondary, letterSpacing: theme.typography.letterSpacing.ui }}>{NEW_THIS_WEEK_TITLE} — {newItems.length} selections</p>
           </div>
           <div className="max-w-7xl mx-auto px-8 lg:px-16">
             <div className="flex flex-wrap justify-center gap-x-16 gap-y-20 items-start">
@@ -161,11 +199,11 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
           <div className="max-w-7xl mx-auto px-8 lg:px-16 mb-20">
             <div className="cat-title">
               {[1, 0.4, 0.15].map((opacity, i) => (
-                <h2 key={i} className="leading-[0.92]" style={{ fontFamily: theme.headingFont, fontSize: "clamp(48px, 8vw, 100px)", color: theme.primary, opacity }}>FEATURED</h2>
+                <h2 key={i} className="leading-[0.92]" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(48px, 8vw, 100px)", color: theme.primary, opacity, letterSpacing: theme.typography.letterSpacing.heading, fontWeight: theme.typography.weights.heading }}>FEATURED</h2>
               ))}
             </div>
             <div className="cat-line mt-5 h-[3px] rounded-full" style={{ background: `linear-gradient(to right, ${theme.primary}, transparent)`, maxWidth: "160px" }} />
-            <p className="cat-subtitle mt-4 tracking-[0.15em] uppercase" style={{ fontFamily: theme.serifFont, fontSize: "12px", color: theme.textSecondary, fontStyle: "italic" }}>Our favorites — {featuredItems.length} selections</p>
+            <p className="cat-subtitle mt-4 tracking-[0.15em] uppercase" style={{ fontFamily: theme.typography.fonts.ui, fontSize: "12px", color: theme.textSecondary, letterSpacing: theme.typography.letterSpacing.ui }}>Our favorites — {featuredItems.length} selections</p>
           </div>
           <div className="max-w-7xl mx-auto px-8 lg:px-16">
             <div className="flex flex-wrap justify-center gap-x-16 gap-y-20 items-start">
@@ -188,7 +226,7 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
           <section key={cat.name} className="cat-section relative py-28 lg:py-40 overflow-hidden">
             <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.02] select-none">
               {Array.from({ length: 6 }).map((_, row) => (
-                <div key={row} className="whitespace-nowrap bg-typo" style={{ fontFamily: theme.headingFont, fontSize: "clamp(60px, 10vw, 120px)", lineHeight: 1.1, color: "#000", transform: `translateX(${row % 2 === 0 ? "-12%" : "6%"})` }}>
+                <div key={row} className="whitespace-nowrap bg-typo" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(60px, 10vw, 120px)", lineHeight: 1.1, color: "#000", transform: `translateX(${row % 2 === 0 ? "-12%" : "6%"})` }}>
                   {Array.from({ length: 8 }).map((_, col) => (<span key={col} className="mr-12">{(cat.name.split(" ").pop() || "").toUpperCase()}</span>))}
                 </div>
               ))}
@@ -197,11 +235,11 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
             <div className="max-w-7xl mx-auto px-8 lg:px-16 mb-20">
               <div className="cat-title">
                 {[1, 0.35, 0.12].map((opacity, i) => (
-                  <h2 key={i} className="leading-[0.92]" style={{ fontFamily: theme.headingFont, fontSize: "clamp(40px, 6vw, 80px)", color: theme.primary, opacity }}>{cat.name.toUpperCase()}</h2>
+                  <h2 key={i} className="leading-[0.92]" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(40px, 6vw, 80px)", color: theme.primary, opacity, letterSpacing: theme.typography.letterSpacing.heading, fontWeight: theme.typography.weights.heading }}>{cat.name.toUpperCase()}</h2>
                 ))}
               </div>
               <div className="cat-line mt-5 h-[3px] rounded-full" style={{ background: `linear-gradient(to right, ${theme.primary}, transparent)`, maxWidth: "160px" }} />
-              <p className="cat-subtitle mt-4 tracking-[0.15em] uppercase" style={{ fontFamily: theme.serifFont, fontSize: "12px", color: theme.textSecondary, fontStyle: "italic" }}>{cat.items.length} selections</p>
+              <p className="cat-subtitle mt-4 tracking-[0.15em] uppercase" style={{ fontFamily: theme.typography.fonts.ui, fontSize: "12px", color: theme.textSecondary, letterSpacing: theme.typography.letterSpacing.ui }}>{cat.items.length} selections</p>
             </div>
 
             <div className="max-w-7xl mx-auto px-8 lg:px-16">
@@ -224,9 +262,9 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
       {/* FOOTER */}
       <footer className="py-32 text-center overflow-hidden">
         <div className="opacity-[0.04]">
-          <p style={{ fontFamily: theme.headingFont, fontSize: "clamp(64px, 12vw, 160px)", color: "#000", lineHeight: 0.9 }}>{restaurant.name}</p>
+          <p style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(64px, 12vw, 160px)", color: "#000", lineHeight: 0.9 }}>{restaurant.name}</p>
         </div>
-        <p className="mt-6 tracking-[0.3em] uppercase" style={{ fontFamily: theme.serifFont, fontSize: "11px", color: theme.textSecondary, fontStyle: "italic" }}>{restaurant.tagline}</p>
+        <p className="mt-6 tracking-[0.3em] uppercase" style={{ fontFamily: theme.typography.fonts.ui, fontSize: "11px", color: theme.textSecondary, letterSpacing: theme.typography.letterSpacing.ui }}>{restaurant.tagline}</p>
       </footer>
 
       {/* DETAIL MODAL */}
@@ -248,39 +286,52 @@ const MenuDesktop = ({ restaurant, resolvedId }: MenuDesktopProps) => {
 
 /* ITEM CARD */
 const ItemCard = ({ item, theme, onClick, size = "normal" }: { item: MenuItem; theme: RestaurantTheme; onClick: () => void; size?: "large" | "normal" | "small" }) => {
-  const img = itemImages[item.name];
-  const imgSize = size === "large" ? "max-w-[360px]" : size === "small" ? "max-w-[180px]" : "max-w-[260px]";
+  const img = itemImageSrc(item);
+  const imgSize = size === "large" ? "max-w-[420px]" : size === "small" ? "max-w-[210px]" : "max-w-[300px]";
   const nameSize = size === "large" ? "text-xl" : size === "small" ? "text-sm" : "text-base";
   const priceSize = size === "large" ? "text-2xl" : size === "small" ? "text-base" : "text-lg";
 
   return (
-    <div className="menu-card group cursor-pointer" onClick={onClick}>
-      <div className={`relative mx-auto ${imgSize} transition-transform duration-700 ease-out group-hover:scale-110 group-hover:-rotate-2`} style={{ filter: "drop-shadow(0 16px 40px rgba(0,0,0,0.15))" }}>
+    <div
+      className="menu-card group cursor-pointer rounded-3xl p-2 -m-2 transition-shadow duration-300 ring-0 hover:ring-2 hover:ring-[color:var(--menu-tap-ring)] ring-offset-2"
+      style={{ ["--tw-ring-offset-color" as string]: "var(--menu-tap-ring-offset)" }}
+      role="button"
+      tabIndex={0}
+      title="Click for full details"
+      aria-label={`${item.name}. Click for full details.`}
+      onClick={() => {
+        lightTap();
+        onClick();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          lightTap();
+          onClick();
+        }
+      }}
+    >
+      <div className={`relative mx-auto ${imgSize} overflow-hidden transition-transform duration-700 ease-out group-hover:scale-110 group-hover:-rotate-2`} style={{ filter: "drop-shadow(0 16px 40px rgba(0,0,0,0.15))" }}>
         {img ? (
-          <img src={img} alt={item.name} loading="lazy" className="w-full aspect-square object-contain" draggable={false} />
+          <img
+            src={img}
+            alt={item.name}
+            loading="lazy"
+            className="w-full aspect-square object-contain"
+            style={itemImageScaleStyle(item)}
+            draggable={false}
+          />
         ) : (
           <div className="w-full aspect-square flex items-center justify-center">
-            <span style={{ fontFamily: theme.headingFont, fontSize: size === "large" ? "100px" : "64px", color: "rgba(0,0,0,0.03)" }}>{item.name.charAt(0)}</span>
+            <span style={{ fontFamily: theme.typography.fonts.heading, fontSize: size === "large" ? "100px" : "64px", color: "rgba(0,0,0,0.03)" }}>{item.name.charAt(0)}</span>
           </div>
         )}
-        {item.tag && (
-          <span className="absolute -top-2 -right-2 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md"
-            style={{ background: item.tag === "Bestseller" ? theme.tagBestseller.bg : item.tag === "Chef's Pick" ? theme.tagChefsPick.bg : theme.tagPopular.bg, color: item.tag === "Bestseller" ? theme.tagBestseller.text : item.tag === "Chef's Pick" ? theme.tagChefsPick.text : theme.tagPopular.text, transform: "rotate(6deg)" }}>
-            {item.tag}
-          </span>
-        )}
-        {item.isNew && (
-          <span className="absolute -bottom-2 -left-2 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md"
-            style={{ background: theme.tagNew.bg, color: theme.tagNew.text, transform: "rotate(-4deg)" }}>NEW</span>
-        )}
-        {item.featured && (
-          <span className="absolute -top-2 -left-2 text-sm" style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.2))" }}>⭐</span>
-        )}
+        <MenuItemBadges item={item} theme={theme} layout="overlay" />
       </div>
       <div className="mt-4 text-center">
-        <p className={`${nameSize} font-bold leading-tight group-hover:tracking-wide transition-all duration-300`} style={{ fontFamily: theme.headingFont, color: theme.text }}>{item.name}</p>
-        <p className={`${priceSize} font-black mt-1`} style={{ fontFamily: theme.headingFont, color: theme.primary }}>₹{item.price}</p>
-        <p className="mt-2 text-xs leading-relaxed max-w-[280px] mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ color: theme.textSecondary, fontFamily: theme.serifFont, fontStyle: "italic" }}>{item.description}</p>
+        <p className={`${nameSize} font-bold leading-tight group-hover:tracking-wide transition-all duration-300`} style={{ fontFamily: theme.typography.fonts.heading, color: theme.text, fontWeight: theme.typography.weights.itemName, letterSpacing: theme.typography.letterSpacing.heading }}>{item.name}</p>
+        <p className={`${priceSize} font-black mt-1`} style={{ fontFamily: theme.typography.fonts.price, color: theme.primary, fontWeight: theme.typography.weights.price, letterSpacing: theme.typography.letterSpacing.heading }}>₹{item.price}</p>
+        <p className="mt-2 text-xs leading-relaxed max-w-[280px] mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ color: theme.textSecondary, fontFamily: theme.typography.fonts.body, lineHeight: theme.typography.lineHeights.relaxed, letterSpacing: theme.typography.letterSpacing.body }}>{item.description}</p>
       </div>
     </div>
   );
@@ -291,32 +342,40 @@ const PlatedLayout = ({ items, theme, onItemClick }: { items: MenuItem[]; theme:
   return (
     <div className="space-y-32">
       {items.map((item, i) => {
-        const img = itemImages[item.name];
+        const img = itemImageSrc(item);
         const isLeft = i % 2 === 0;
         return (
-          <div key={item.name} className={`menu-card flex items-center gap-8 ${isLeft ? "flex-row" : "flex-row-reverse"} cursor-pointer group`} onClick={() => onItemClick(item)}>
-            <div className={`flex-shrink-0 w-[55%] relative ${isLeft ? "-ml-[15%]" : "-mr-[15%]"}`}>
-              <div className="transition-transform duration-700 group-hover:scale-105 group-hover:rotate-2" style={{ filter: "drop-shadow(0 24px 60px rgba(0,0,0,0.2))" }}>
+          <div
+            key={item.name}
+            className={`menu-card flex items-center gap-8 ${isLeft ? "flex-row" : "flex-row-reverse"} cursor-pointer group`}
+            onClick={() => {
+              lightTap();
+              onItemClick(item);
+            }}
+          >
+            <div className={`flex-shrink-0 w-[62%] relative ${isLeft ? "-ml-[15%]" : "-mr-[15%]"}`}>
+              <div className="relative overflow-hidden transition-transform duration-700 group-hover:scale-105 group-hover:rotate-2" style={{ filter: "drop-shadow(0 24px 60px rgba(0,0,0,0.2))" }}>
                 {img ? (
-                  <img src={img} alt={item.name} loading="lazy" className="w-full aspect-square object-contain" draggable={false} />
+                  <img
+                    src={img}
+                    alt={item.name}
+                    loading="lazy"
+                    className="w-full aspect-square object-contain"
+                    style={itemImageScaleStyle(item)}
+                    draggable={false}
+                  />
                 ) : (
                   <div className="w-full aspect-square flex items-center justify-center">
-                    <span style={{ fontFamily: theme.headingFont, fontSize: "120px", color: "rgba(0,0,0,0.03)" }}>{item.name.charAt(0)}</span>
+                    <span style={{ fontFamily: theme.typography.fonts.heading, fontSize: "120px", color: "rgba(0,0,0,0.03)" }}>{item.name.charAt(0)}</span>
                   </div>
                 )}
+                <MenuItemBadges item={item} theme={theme} layout="overlay" />
               </div>
-              {item.tag && (
-                <span className="absolute top-4 right-4 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full shadow-lg"
-                  style={{ background: item.tag === "Bestseller" ? theme.tagBestseller.bg : item.tag === "Chef's Pick" ? theme.tagChefsPick.bg : theme.tagPopular.bg, color: item.tag === "Bestseller" ? theme.tagBestseller.text : item.tag === "Chef's Pick" ? theme.tagChefsPick.text : theme.tagPopular.text }}>
-                  {item.tag}
-                </span>
-              )}
             </div>
             <div className={`flex-1 ${isLeft ? "text-left" : "text-right"}`}>
-              <h3 className="leading-[0.95] group-hover:tracking-wide transition-all duration-500" style={{ fontFamily: theme.headingFont, fontSize: "clamp(28px, 4vw, 48px)", color: theme.text }}>{item.name.toUpperCase()}</h3>
-              <p className="mt-3" style={{ fontFamily: theme.headingFont, fontSize: "clamp(24px, 3vw, 36px)", color: theme.primary }}>₹{item.price}</p>
-              <p className="mt-4 leading-[1.8] max-w-[400px]" style={{ fontSize: "14px", color: theme.textSecondary, fontFamily: theme.serifFont, fontStyle: "italic", marginLeft: isLeft ? "0" : "auto", marginRight: isLeft ? "auto" : "0" }}>{item.description}</p>
-              {item.isNew && <span className="inline-block mt-3 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full" style={{ background: theme.tagNew.bg, color: theme.tagNew.text }}>NEW</span>}
+              <h3 className="leading-[0.95] group-hover:tracking-wide transition-all duration-500" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(28px, 4vw, 48px)", color: theme.text, letterSpacing: theme.typography.letterSpacing.heading }}>{item.name.toUpperCase()}</h3>
+              <p className="mt-3" style={{ fontFamily: theme.typography.fonts.price, fontSize: "clamp(24px, 3vw, 36px)", color: theme.primary, fontWeight: theme.typography.weights.price }}>₹{item.price}</p>
+              <p className="mt-4 leading-[1.8] max-w-[400px]" style={{ fontSize: "14px", color: theme.textSecondary, fontFamily: theme.typography.fonts.body, lineHeight: theme.typography.lineHeights.relaxed, letterSpacing: theme.typography.letterSpacing.body, marginLeft: isLeft ? "0" : "auto", marginRight: isLeft ? "auto" : "0" }}>{item.description}</p>
             </div>
           </div>
         );
@@ -339,7 +398,7 @@ const CollageLayout = ({ items, theme, onItemClick }: { items: MenuItem[]; theme
       {items.map((item, i) => {
         const o = offsets[i % offsets.length];
         return (
-          <div key={item.name} style={{ marginTop: o.marginTop, flex: "0 0 auto", width: o.size === "large" ? "300px" : o.size === "small" ? "180px" : "240px" }}>
+          <div key={item.name} style={{ marginTop: o.marginTop, flex: "0 0 auto", width: o.size === "large" ? "340px" : o.size === "small" ? "205px" : "275px" }}>
             <ItemCard item={item} theme={theme} onClick={() => onItemClick(item)} size={o.size} />
           </div>
         );
@@ -393,14 +452,10 @@ const DetailModal = ({ detailItem, theme, allItems, currentDetailIdx, onClose, o
   onClose: () => void;
   onNavigate: (idx: number) => void;
 }) => {
-  const img = itemImages[detailItem.item.name];
+  const LAYERS = { background: 0, image: 10, text: 20, controls: 30 } as const;
+  const img = itemImageSrc(detailItem.item);
   const isPlated = /pizza|pasta|appetizer|non veg/i.test(detailItem.cat);
-
-  const getTagStyle = (tag: string) => {
-    const key = tag === "Chef's Pick" ? "tagChefsPick" : `tag${tag}`;
-    const t = (theme as any)[key] || theme.tagPopular;
-    return { background: t.bg, color: t.text };
-  };
+  const imageSide = currentDetailIdx % 2 === 0 ? "right" : "left";
 
   return (
     <motion.div className="fixed inset-0 z-[100] flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
@@ -414,32 +469,32 @@ const DetailModal = ({ detailItem, theme, allItems, currentDetailIdx, onClose, o
         exit={{ scale: 0.8, opacity: 0, y: 60 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
-        <button onClick={onClose} className="absolute top-5 right-5 z-20 w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/70 transition-colors">
+        <button onClick={onClose} className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/70 transition-colors" style={{ zIndex: LAYERS.controls }}>
           <X size={16} style={{ color: theme.textSecondary }} />
         </button>
 
         {currentDetailIdx > 0 && (
-          <button onClick={() => onNavigate(currentDetailIdx - 1)} className="absolute left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/70 transition-colors">
+          <button onClick={() => onNavigate(currentDetailIdx - 1)} className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/70 transition-colors" style={{ zIndex: LAYERS.controls }}>
             <ChevronLeft size={16} style={{ color: theme.textSecondary }} />
           </button>
         )}
         {currentDetailIdx < allItems.length - 1 && (
-          <button onClick={() => onNavigate(currentDetailIdx + 1)} className="absolute right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/70 transition-colors">
+          <button onClick={() => onNavigate(currentDetailIdx + 1)} className="absolute right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/70 transition-colors" style={{ zIndex: LAYERS.controls }}>
             <ChevronRight size={16} style={{ color: theme.textSecondary }} />
           </button>
         )}
 
-        <div className="relative z-10 p-10 pt-8">
-          <div className="mb-6">
-            {[0.8, 0.3, 0.1].map((opacity, i) => (
-              <p key={i} className="leading-[0.92] uppercase" style={{ fontFamily: theme.headingFont, fontSize: "clamp(28px, 5vw, 44px)", color: theme.primary, opacity }}>{detailItem.cat.toUpperCase()}</p>
+        <div className="relative p-10 pt-8">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: LAYERS.background }}>
+            {[0.09, 0.06, 0.04].map((opacity, i) => (
+              <p key={i} className="leading-[0.88] uppercase text-center" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(56px, 10vw, 110px)", color: theme.primary, opacity, marginTop: i === 0 ? "42px" : "2px", letterSpacing: theme.typography.letterSpacing.heading }}>{detailItem.cat.toUpperCase()}</p>
             ))}
           </div>
 
           {detailItem.item.isNew && (
-            <div className="absolute top-8 right-10">
-              {[0.7, 0.35, 0.15, 0.06].map((opacity, i) => (
-                <p key={i} className="leading-[0.95] uppercase text-right" style={{ fontFamily: theme.headingFont, fontSize: "clamp(18px, 3vw, 28px)", color: theme.primary, opacity }}>IT'S NEW</p>
+            <div className="absolute top-8 right-10" style={{ zIndex: LAYERS.text }}>
+              {[0.25, 0.12].map((opacity, i) => (
+                <p key={i} className="leading-[0.95] uppercase text-right" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "clamp(18px, 3vw, 28px)", color: theme.primary, opacity, letterSpacing: theme.typography.letterSpacing.ui }}>IT'S NEW</p>
               ))}
             </div>
           )}
@@ -449,38 +504,39 @@ const DetailModal = ({ detailItem, theme, allItems, currentDetailIdx, onClose, o
             initial={{ scale: 0.6, opacity: 0, rotate: -8 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className={`mx-auto ${isPlated ? "w-[80%] max-w-[400px] -mr-[10%]" : "w-[65%] max-w-[300px]"}`}
-            style={{ filter: "drop-shadow(0 24px 60px rgba(0,0,0,0.22))" }}
+            className={`relative ${
+              isPlated
+                ? imageSide === "right"
+                  ? "w-[88%] max-w-[480px] ml-auto -mr-[12%]"
+                  : "w-[88%] max-w-[480px] mr-auto -ml-[12%]"
+                : imageSide === "right"
+                  ? "w-[76%] max-w-[380px] ml-auto -mr-[8%]"
+                  : "w-[76%] max-w-[380px] mr-auto -ml-[8%]"
+            }`}
+            style={{ zIndex: LAYERS.image, filter: "drop-shadow(0 24px 60px rgba(0,0,0,0.22))" }}
           >
             {img ? (
-              <img src={img} alt={detailItem.item.name} className="w-full aspect-square object-contain" draggable={false} />
+              <img
+                src={img}
+                alt={detailItem.item.name}
+                className={`w-full aspect-square ${isPlated ? "object-cover rounded-full" : "object-contain"}`}
+                style={itemImageScaleStyle(detailItem.item)}
+                draggable={false}
+              />
             ) : (
               <div className="w-full aspect-square flex items-center justify-center">
-                <span style={{ fontFamily: theme.headingFont, fontSize: "100px", color: "rgba(0,0,0,0.03)" }}>{detailItem.item.name.charAt(0)}</span>
+                <span style={{ fontFamily: theme.typography.fonts.heading, fontSize: "100px", color: "rgba(0,0,0,0.03)" }}>{detailItem.item.name.charAt(0)}</span>
               </div>
             )}
           </motion.div>
 
-          <div className="mt-8">
-            <h2 className="leading-[1]" style={{ fontFamily: theme.headingFont, fontSize: "32px", color: theme.text }}>{detailItem.item.name.toUpperCase()}</h2>
-            <p className="mt-3" style={{ fontFamily: theme.headingFont, fontSize: "28px", color: theme.primary }}>₹{detailItem.item.price}</p>
-            <p className="mt-5 leading-[1.8] max-w-[400px]" style={{ fontSize: "14px", color: theme.textSecondary, fontFamily: theme.serifFont, fontStyle: "italic" }}>{detailItem.item.description}</p>
+          <div className={`mt-8 px-2 ${imageSide === "right" ? "text-left" : "text-right"}`} style={{ zIndex: LAYERS.text, position: "relative" }}>
+            <h2 className="leading-[1]" style={{ fontFamily: theme.typography.fonts.heading, fontSize: "32px", color: theme.text, letterSpacing: theme.typography.letterSpacing.heading }}>{detailItem.item.name.toUpperCase()}</h2>
+            <p className="mt-4 leading-[1.8] max-w-[400px]" style={{ fontSize: "14px", color: theme.textSecondary, fontFamily: theme.typography.fonts.body, lineHeight: theme.typography.lineHeights.relaxed, letterSpacing: theme.typography.letterSpacing.body, marginLeft: imageSide === "right" ? "0" : "auto" }}>{detailItem.item.description}</p>
+            <p className="mt-4" style={{ fontFamily: theme.typography.fonts.price, fontSize: "28px", color: theme.primary, fontWeight: theme.typography.weights.price }}>₹{detailItem.item.price}</p>
 
-            <div className="flex items-center gap-3 mt-6 pb-2">
-              {detailItem.item.tag && (
-                <span className="text-[9px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full" style={{ fontFamily: theme.headingFont, ...getTagStyle(detailItem.item.tag) }}>
-                  {detailItem.item.tag === "Bestseller" ? "⭐ " : detailItem.item.tag === "Chef's Pick" ? "👨‍🍳 " : "🔥 "}{detailItem.item.tag}
-                </span>
-              )}
-              {detailItem.item.isNew && (
-                <span className="text-[9px] font-bold uppercase tracking-[0.12em] px-3 py-1.5 rounded-full" style={{ background: theme.tagNew.bg, color: theme.tagNew.text, fontFamily: theme.headingFont }}>✨ New</span>
-              )}
-              {detailItem.item.featured && (
-                <span className="text-[9px] font-bold uppercase tracking-[0.12em] px-3 py-1.5 rounded-full" style={{ background: theme.tagFeatured.bg, color: theme.tagFeatured.text, fontFamily: theme.headingFont }}>⭐ Featured</span>
-              )}
-              {detailItem.item.jain && (
-                <span className="text-[9px] font-bold uppercase tracking-[0.12em] px-3 py-1.5 rounded-full" style={{ background: theme.tagJain.bg, color: theme.tagJain.text, fontFamily: theme.headingFont }}>🌿 Jain</span>
-              )}
+            <div className={`flex items-center gap-3 mt-6 pb-2 ${imageSide === "right" ? "justify-start" : "justify-end"}`}>
+              <MenuItemBadges item={detailItem.item} theme={theme} layout="inline" showJain />
             </div>
           </div>
         </div>

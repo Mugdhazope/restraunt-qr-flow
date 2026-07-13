@@ -44,7 +44,10 @@ class WhatsAppWebhookView(View):
         except UnicodeDecodeError:
             decoded = ""
 
-        preview = decoded[:_RAW_BODY_LOG_LIMIT] if decoded else repr(raw[:_RAW_BODY_LOG_LIMIT])
+        if decoded:
+            preview = decoded[:_RAW_BODY_LOG_LIMIT]
+        else:
+            preview = repr(raw[:_RAW_BODY_LOG_LIMIT])
         logger.info(
             "whatsapp_webhook_post_received bytes=%s preview=%s",
             len(raw),
@@ -58,16 +61,31 @@ class WhatsAppWebhookView(View):
 
         parsed = parse_rating_webhook_payload(payload)
         logger.info("whatsapp_webhook_parsed parsed=%s", parsed)
-        if parsed is None and isinstance(payload, dict) and payload.get("entry"):
-            logger.warning(
-                "whatsapp_webhook_no_inbound_message_parsed "
-                "(check Meta callback URL is public HTTPS, subscribed to messages, "
-                "and verify_token matches WHATSAPP_WEBHOOK_VERIFY_TOKEN)",
-                extra={"object": payload.get("object")},
-            )
 
         service = self.service_class()
+        status_outcome = "no_statuses"
         try:
+            if isinstance(payload, dict):
+                status_outcome = service.process_outbound_statuses(payload)
+                if status_outcome != "no_statuses":
+                    logger.info(
+                        "whatsapp_webhook_outbound_status outcome=%s",
+                        status_outcome,
+                    )
+
+            if (
+                parsed is None
+                and status_outcome == "no_statuses"
+                and isinstance(payload, dict)
+                and payload.get("entry")
+            ):
+                logger.warning(
+                    "whatsapp_webhook_no_inbound_message_parsed "
+                    "(check Meta callback URL is public HTTPS, subscribed to messages, "
+                    "and verify_token matches WHATSAPP_WEBHOOK_VERIFY_TOKEN)",
+                    extra={"object": payload.get("object")},
+                )
+
             outcome = service.process_inbound_message(parsed)
             logger.info("whatsapp_webhook_processed outcome=%s", outcome)
         except Exception:

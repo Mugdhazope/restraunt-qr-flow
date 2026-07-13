@@ -36,6 +36,9 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
     serializer_class = UserSerializer
     queryset = User.objects.all()
     lookup_field = "username"
+    # Allow email-style usernames (dots). Default [^/.]+ breaks HyperlinkedIdentityField reverse.
+    lookup_value_regex = r"[^/]+"
+    pagination_class = None
 
     def get_queryset(self, *args, **kwargs):
         assert isinstance(self.request.user.id, int)

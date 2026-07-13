@@ -1,3 +1,4 @@
+import type { MenuItem } from "@/data/menuData";
 import pizzaHero from "@/assets/menu/pizza-hero.jpg";
 import drinksHero from "@/assets/menu/drinks-hero.jpg";
 import appetizersHero from "@/assets/menu/appetizers-hero.jpg";
@@ -11,7 +12,7 @@ import milkshakesHero from "@/assets/menu/milkshakes-hero.jpg";
 
 // Individual item images (transparent PNGs)
 import pizza1 from "@/assets/menu/items/pizza-1.png";
-import pizza2 from "@/assets/menu/items/pizza-2.png";
+import pizza2 from "@/assets/menu/items/DSC00092.png";
 import pizza3 from "@/assets/menu/items/pizza-3.png";
 import pizza4 from "@/assets/menu/items/pizza-4.png";
 import pizza5 from "@/assets/menu/items/pizza-5.png";
@@ -111,3 +112,17 @@ export const itemImages: Record<string, string> = {
   "Nutella Milkshake": shake2,
   "Oreo Milkshake": shake1,
 };
+
+/** Prefer API image URL; fall back to bundled map by item name. */
+export function itemImageSrc(item: MenuItem): string | undefined {
+  const u = item.imageUrl;
+  if (u && String(u).trim()) return String(u).trim();
+  return itemImages[item.name];
+}
+
+/** CSS transform for per-item image scale percent (default 100). */
+export function itemImageScaleStyle(item: MenuItem): { transform?: string } {
+  const n = typeof item.imageScale === "number" && Number.isFinite(item.imageScale) ? item.imageScale : 100;
+  if (n === 100) return {};
+  return { transform: `scale(${n / 100})` };
+}

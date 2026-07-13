@@ -1,29 +1,31 @@
 from __future__ import annotations
 
 from kotak.integrations.whatsapp.exceptions import WhatsAppAPIError
+from kotak.integrations.whatsapp.exceptions import meta_outbound_delivery_hint
 
 
-def test_whatsapp_api_error_detects_expired_token_via_http_status():
-    exc = WhatsAppAPIError("fail", http_status=401)
-    assert exc.is_access_token_error is True
+def test_whatsapp_api_error_user_message_expired_token():
+    exc = WhatsAppAPIError(
+        "WhatsApp API request failed",
+        http_status=401,
+        meta_code=190,
+    )
+    msg = exc.user_message()
+    assert "token" in msg.lower()
+    assert exc.is_access_token_error
 
 
-def test_whatsapp_api_error_detects_meta_oauth_code_190():
-    exc = WhatsAppAPIError("fail", http_status=400, meta_code=190)
-    assert exc.is_access_token_error is True
+def test_whatsapp_api_error_user_message_test_recipient():
+    exc = WhatsAppAPIError("x", http_status=400, meta_code=131030)
+    um = exc.user_message().lower()
+    assert "development" in um or "test" in um
 
 
-def test_whatsapp_api_error_other_errors_not_token():
-    exc = WhatsAppAPIError("fail", http_status=400, meta_code=100)
-    assert exc.is_access_token_error is False
+def test_meta_outbound_delivery_hint_24h():
+    h = meta_outbound_delivery_hint(131047)
+    assert h is not None
+    assert "24-hour" in h
 
 
-def test_whatsapp_api_error_detects_recipient_not_allowed():
-    exc = WhatsAppAPIError("fail", http_status=400, meta_code=131030)
-    assert exc.is_recipient_not_in_allowed_list is True
-    assert exc.is_access_token_error is False
-
-
-def test_whatsapp_api_error_other_codes_not_recipient_allowlist():
-    exc = WhatsAppAPIError("fail", http_status=400, meta_code=100)
-    assert exc.is_recipient_not_in_allowed_list is False
+def test_meta_outbound_delivery_hint_unknown():
+    assert meta_outbound_delivery_hint(999999) is None

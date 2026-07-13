@@ -22,9 +22,10 @@ class SendOTPSerializer(serializers.Serializer):
         return value
 
     def validate_phone(self, value: str) -> str:
-        if not E164_PHONE_REGEX.match(value):
+        normalized = "".join(str(value).split())
+        if not E164_PHONE_REGEX.match(normalized):
             raise serializers.ValidationError("Phone must be in E.164 format, e.g. +919999999999.")
-        return value
+        return normalized
 
     def validate_name(self, value: str) -> str:
         return value.strip()

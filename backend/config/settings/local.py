@@ -20,6 +20,19 @@ ALLOWED_HOSTS = [
     ".ngrok-free.dev",
 ]  # noqa: S104
 
+# Vite (:8080) proxies /api to Django (:8000); browser Referer does not match Host — CSRF needs this.
+# https://docs.djangoproject.com/en/stable/ref/settings/#csrf-trusted-origins
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+]
+
+# CRM: set DJANGO_CRM_OPEN_PERMISSIONS=yes in .envs/.local/.django for open dashboard API in dev.
+# Default False so a public ngrok tunnel to :8000 does not expose the CRM without staff auth.
+CRM_OPEN_PERMISSIONS = env.bool("DJANGO_CRM_OPEN_PERMISSIONS", default=False)
+
 # CACHES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#caches

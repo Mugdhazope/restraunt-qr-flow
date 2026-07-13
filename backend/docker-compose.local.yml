@@ -4,6 +4,17 @@ volumes:
 
 
 services:
+  # Optional: `docker compose --profile rembg up` then set MENU_BG_REMOVAL_URL=http://bg_removal:8765 on django.
+  bg_removal:
+    profiles: ["rembg"]
+    build:
+      context: ./bg_removal_service
+      dockerfile: Dockerfile
+    image: kotak_local_bg_removal
+    container_name: kotak_local_bg_removal
+    ports:
+      - "8765:8765"
+
   django:
     build:
       context: .
@@ -42,7 +53,7 @@ services:
     env_file:
       - ./.envs/.local/.django
       - ./.envs/.local/.postgres
-    command: /bin/bash -c "celery -A config.celery_app worker -l INFO"
+    command: /bin/bash -c "uv sync && exec celery -A config.celery_app worker -l INFO"
 
   redis:
     image: redis:7

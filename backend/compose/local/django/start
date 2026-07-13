@@ -4,6 +4,8 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# Anonymous compose volume /app/.venv can outlive image rebuilds; keep deps in sync with uv.lock.
+uv sync
 
 python manage.py migrate
 exec python manage.py runserver_plus 0.0.0.0:8000

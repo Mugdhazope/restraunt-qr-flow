@@ -1,0 +1,50 @@
+# Production Django env TEMPLATE — copy to Dokploy secrets (or .envs/.production/.django).
+# NEVER commit real secrets. Replace every YOUR_* value.
+#
+# General
+# ------------------------------------------------------------------------------
+DJANGO_SETTINGS_MODULE=config.settings.production
+DJANGO_SECRET_KEY=CHANGE_ME_LONG_RANDOM_50_PLUS_CHARS
+DJANGO_ADMIN_URL=CHANGE_ME_random_path/
+DJANGO_ALLOWED_HOSTS=YOUR_DOMAIN,www.YOUR_DOMAIN
+
+# Security (required for same-origin SPA + HTTPS)
+# ------------------------------------------------------------------------------
+DJANGO_SECURE_SSL_REDIRECT=True
+DJANGO_CSRF_TRUSTED_ORIGINS=https://YOUR_DOMAIN,https://www.YOUR_DOMAIN
+
+# Email (optional Phase 1)
+# ------------------------------------------------------------------------------
+DJANGO_SERVER_EMAIL=
+DJANGO_DEFAULT_FROM_EMAIL=
+
+# AWS S3 media (bucket created for Phase 1: doughandjoe-media-prod / ap-south-1)
+# Prefer EC2 instance role on Dokploy — leave keys empty if the role can write the bucket.
+# ------------------------------------------------------------------------------
+DJANGO_AWS_ACCESS_KEY_ID=
+DJANGO_AWS_SECRET_ACCESS_KEY=
+DJANGO_AWS_STORAGE_BUCKET_NAME=doughandjoe-media-prod
+DJANGO_AWS_S3_REGION_NAME=ap-south-1
+# CloudFront OAC CDN (private bucket) — no https:// prefix
+DJANGO_AWS_S3_CUSTOM_DOMAIN=d24m4yvlxpismq.cloudfront.net
+
+# Phase 1: no celeryworker
+# ------------------------------------------------------------------------------
+CELERY_TASK_ALWAYS_EAGER=True
+
+# Redis (compose service name)
+# ------------------------------------------------------------------------------
+REDIS_URL=redis://redis:6379/0
+
+# Gunicorn
+# ------------------------------------------------------------------------------
+WEB_CONCURRENCY=2
+
+# Auth
+# ------------------------------------------------------------------------------
+DJANGO_ACCOUNT_ALLOW_REGISTRATION=False
+
+# Optional check-in throttle override
+# DJANGO_CHECK_IN_THROTTLE=40/hour
+
+# Leave WhatsApp / SMS empty for Phase 1 QR

@@ -278,6 +278,17 @@ kotak/media/
 
 .pytest_cache/
 .ipython/
+
+# Secrets — never commit real env files (Dokploy / local)
 .env
+.env.*
+!.env.example
 .envs/*
 !.envs/.local/
+!.envs/.production/
+# Ignore all files under local/production; only allow *.example templates
+.envs/.local/*
+!.envs/.local/*.example
+.envs/.production/*
+!.envs/.production/*.example
+

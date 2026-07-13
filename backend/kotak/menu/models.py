@@ -1,5 +1,9 @@
+from django.core.validators import MaxValueValidator
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from kotak.menu.image_utils import menu_item_image_upload_to
 
 
 class MenuCategory(models.Model):
@@ -38,12 +42,18 @@ class MenuItem(models.Model):
     price = models.DecimalField(_("price"), max_digits=10, decimal_places=2)
     image = models.ImageField(
         _("image"),
-        upload_to="menu/items/%Y/%m/",
+        upload_to=menu_item_image_upload_to,
         blank=True,
     )
     tag = models.CharField(_("tag"), max_length=64, blank=True)
     is_featured = models.BooleanField(_("featured"), default=False)
     is_new = models.BooleanField(_("new"), default=False)
+    is_jain = models.BooleanField(_("Jain option"), default=False)
+    image_scale = models.PositiveSmallIntegerField(
+        _("image scale percent"),
+        default=100,
+        validators=[MinValueValidator(50), MaxValueValidator(200)],
+    )
 
     class Meta:
         ordering = ["category", "name"]

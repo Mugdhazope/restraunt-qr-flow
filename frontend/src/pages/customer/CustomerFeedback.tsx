@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCustomer } from "@/context/CustomerContext";
+import { restaurants } from "@/data/menuData";
+import { resolveScanContext } from "@/lib/scanContext";
+import { useScannerTheme } from "@/lib/useScannerTheme";
 
 const options = [
   { label: "Loved it", value: "loved", emoji: "😍" },
@@ -11,6 +14,11 @@ const options = [
 const CustomerFeedback = () => {
   const navigate = useNavigate();
   const { restaurantId } = useParams<{ restaurantId: string }>();
+  const { apiSlug, menuKey } = useMemo(() => resolveScanContext(restaurantId), [restaurantId]);
+  const pathSegment = restaurantId?.trim() || menuKey;
+  const outletName = restaurants[menuKey]?.name || "us";
+  const outletShort = menuKey === "thenest" ? "TN" : "DJ";
+  const { theme } = useScannerTheme(apiSlug, menuKey);
   const { customer } = useCustomer();
   const [selected, setSelected] = useState<string | null>(null);
   const [comment, setComment] = useState("");
@@ -26,16 +34,16 @@ const CustomerFeedback = () => {
     setSubmitted(true);
     setTimeout(() => {
       if (selected === "loved") {
-        navigate(`/scan/${restaurantId || "doughandjoe"}/review`);
+        navigate(`/scan/${pathSegment}/review`);
       } else {
-        navigate(`/scan/${restaurantId || "doughandjoe"}/checked-in`);
+        navigate(`/scan/${pathSegment}/checked-in`);
       }
     }, 1500);
   };
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 animate-fade-in">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 animate-fade-in" style={{ background: theme.background }}>
         <div className="text-center space-y-3">
           <div className="text-4xl">🙏</div>
           <h1 className="text-xl font-bold text-foreground">Thank you!</h1>
@@ -48,17 +56,17 @@ const CustomerFeedback = () => {
   // WhatsApp-style delayed prompt
   if (!showWhatsApp) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: theme.background }}>
         <div className="w-full max-w-sm space-y-6 animate-fade-in">
           {/* Simulated WhatsApp message */}
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             <div className="bg-success/10 px-4 py-2.5 flex items-center gap-2 border-b border-border">
               <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center text-success text-xs font-bold">
-                {restaurantId === "thenest" ? "TN" : "DJ"}
+                {outletShort}
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  {restaurantId === "thenest" ? "The Nest" : "Dough & Joe"}
+                  {outletName}
                 </p>
                 <p className="text-[10px] text-muted-foreground">via WhatsApp · 3h ago</p>
               </div>
@@ -66,7 +74,7 @@ const CustomerFeedback = () => {
             <div className="p-4">
               <div className="bg-muted/50 rounded-lg rounded-tl-none px-3 py-2.5 text-sm text-foreground max-w-[85%]">
                 Hey {customer?.name || "there"}! 👋<br />
-                Thanks for visiting {restaurantId === "thenest" ? "The Nest" : "Dough & Joe"} today.<br />
+                Thanks for visiting {outletName} today.<br />
                 How was your experience?
               </div>
             </div>
@@ -84,12 +92,12 @@ const CustomerFeedback = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: theme.background }}>
       <div className="w-full max-w-sm space-y-6 animate-fade-in">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground">How was your experience?</h1>
           <p className="text-muted-foreground text-sm mt-1.5">
-            At {restaurantId === "thenest" ? "The Nest" : "Dough & Joe"} today
+            At {outletName} today
           </p>
         </div>
 

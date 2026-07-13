@@ -38,4 +38,18 @@ class TestUserViewSet:
             "username": user.username,
             "url": f"http://testserver/api/users/{user.username}/",
             "name": user.name,
+            "is_staff": user.is_staff,
         }
+
+    def test_me_email_username(self, user: User, api_rf: APIRequestFactory):
+        """Dots in email usernames must reverse under lookup_value_regex."""
+        user.username = "staff@example.com"
+        user.save(update_fields=["username"])
+        view = UserViewSet()
+        request = api_rf.get("/fake-url/")
+        request.user = user
+        view.request = request
+        response = view.me(request)  # type: ignore[call-arg, arg-type, misc]
+        assert response.status_code == 200
+        assert response.data["username"] == "staff@example.com"
+        assert response.data["url"] == "http://testserver/api/users/staff@example.com/"

@@ -1,16 +1,30 @@
+# Phase 1 production stack (AWS EC2 + Dokploy-friendly).
+#
+# Services: django, frontend (nginx SPA), postgres, redis, traefik, awscli.
+# Do NOT start celeryworker / bg_removal in Phase 1 — set CELERY_TASK_ALWAYS_EAGER=True.
+#
+# Dokploy notes:
+# - Prefer deploying this compose from the monorepo with paths as written, OR point
+#   Dokploy "compose file" at this file and set build contexts accordingly.
+# - If Dokploy already runs Traefik: remove the `traefik` service and attach domain
+#   routes in the Dokploy UI (API paths → django:5000, `/` → frontend:80).
+# - Replace YOUR_DOMAIN in compose/production/traefik/traefik.yml (bundled Traefik)
+#   or configure the same host in Dokploy. Never leave example.com.
+# - Inject secrets via Dokploy env groups; do not commit .envs/.production/.
+# - Frontend build arg VITE_PUBLIC_APP_ORIGIN must be https://YOUR_DOMAIN.
+#
+# Phase 2: add celeryworker (+ optional celerybeat), set CELERY_TASK_ALWAYS_EAGER=False.
+
 volumes:
   production_postgres_data: {}
   production_postgres_data_backups: {}
   production_traefik: {}
-  
-
 
 services:
   django:
     build:
       context: .
       dockerfile: ./compose/production/django/Dockerfile
-
     image: kotak_production_django
     depends_on:
       - postgres
@@ -19,6 +33,31 @@ services:
       - ./.envs/.production/.django
       - ./.envs/.production/.postgres
     command: /start
+    # Dokploy / healthchecks: GET /api/csrf/ (or add a dedicated /health/ later)
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/csrf/')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      # Repo layout: frontend/ sits next to backend/
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_PUBLIC_APP_ORIGIN: ${VITE_PUBLIC_APP_ORIGIN:-https://YOUR_DOMAIN}
+    image: kotak_production_frontend
+    depends_on:
+      - django
+    # No public ports — Traefik (or Dokploy proxy) reaches frontend:80 on the compose network
 
   postgres:
     build:
@@ -30,6 +69,7 @@ services:
       - production_postgres_data_backups:/backups
     env_file:
       - ./.envs/.production/.postgres
+    # Do not publish 5432 to the host in production
 
   traefik:
     build:
@@ -38,6 +78,7 @@ services:
     image: kotak_production_traefik
     depends_on:
       - django
+      - frontend
     volumes:
       - production_traefik:/etc/traefik/acme
     ports:
@@ -46,7 +87,7 @@ services:
 
   redis:
     image: docker.io/redis:7.2
-    
+    # Do not publish 6379 to the host in production
 
   awscli:
     build:
@@ -56,3 +97,17 @@ services:
       - ./.envs/.production/.django
     volumes:
       - production_postgres_data_backups:/backups:z
+
+  # Phase 2 only (uncomment when WA/campaigns need async workers):
+  # celeryworker:
+  #   build:
+  #     context: .
+  #     dockerfile: ./compose/production/django/Dockerfile
+  #   image: kotak_production_django
+  #   command: celery -A config.celery_app worker -l INFO
+  #   depends_on:
+  #     - redis
+  #     - postgres
+  #   env_file:
+  #     - ./.envs/.production/.django
+  #     - ./.envs/.production/.postgres

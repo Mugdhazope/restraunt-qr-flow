@@ -1,34 +1,47 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { outlets } from "@/data/mockData";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useRestaurant } from "@/context/RestaurantContext";
+import { useAuth, userInitials } from "@/context/AuthContext";
 import { getTheme } from "@/data/restaurantThemes";
 import {
-  LayoutDashboard, Users, MessageSquare, Star, Megaphone,
-  Zap, QrCode, BarChart3, Settings, Search, Bell, ChevronDown,
-  Menu, X, LogOut, UtensilsCrossed, Upload, Store
+  LayoutDashboard, Users, MessageSquare, Star,
+  QrCode, BarChart3, Settings, Search, Bell, ChevronDown,
+  Menu, X, LogOut, UtensilsCrossed, Upload, Store, LayoutTemplate
 } from "lucide-react";
+// WA_DISABLED: Megaphone, Zap — re-import when Campaigns/Automations nav returns
 
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "Customers", path: "/dashboard/customers", icon: Users },
   { label: "Import Customers", path: "/dashboard/import-customers", icon: Upload },
   { label: "Menu", path: "/dashboard/menu", icon: UtensilsCrossed },
+  { label: "Layout Editor", path: "/dashboard/layout", icon: LayoutTemplate },
   { label: "Feedback", path: "/dashboard/feedback", icon: MessageSquare },
   { label: "Google Reviews", path: "/dashboard/google-reviews", icon: Star },
-  { label: "WhatsApp Campaigns", path: "/dashboard/campaigns", icon: Megaphone },
-  { label: "Automations", path: "/dashboard/automations", icon: Zap },
+  // WA_DISABLED — re-enable with WhatsApp
+  // { label: "WhatsApp Campaigns", path: "/dashboard/campaigns", icon: Megaphone },
+  // { label: "Automations", path: "/dashboard/automations", icon: Zap },
   { label: "QR & Entry Flow", path: "/dashboard/qr-entry", icon: QrCode },
   { label: "Analytics", path: "/dashboard/analytics", icon: BarChart3 },
   { label: "Settings", path: "/dashboard/settings", icon: Settings },
 ];
 
-const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+const DashboardLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [outletDropdown, setOutletDropdown] = useState(false);
-  const { selectedOutlet, setSelectedOutlet } = useRestaurant();
+  const { outlets, selectedOutlet, setSelectedOutlet } = useRestaurant();
   const theme = getTheme(selectedOutlet.restaurantId);
+  const initials = userInitials(user);
+  const displayName = user?.name?.trim() || user?.username || "Staff";
+  const displayHandle = user?.username ? `@${user.username}` : "";
+
+  async function handleLogout() {
+    await logout();
+    navigate("/dashboard/login", { replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -39,7 +52,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-sidebar z-50 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="px-6 h-16 flex items-center justify-between border-b border-sidebar-border">
           <Link to="/dashboard" className="text-sidebar-foreground font-bold text-lg tracking-tight">
-            WhatsApp CRM
+            Digital Menu
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-muted hover:text-sidebar-foreground">
             <X size={20} />
@@ -113,13 +126,18 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="px-4 py-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-foreground text-xs font-bold">
-              AK
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sidebar-foreground text-sm font-medium truncate">Admin</p>
-              <p className="text-sidebar-muted text-xs truncate">admin@restaurant.com</p>
+              <p className="text-sidebar-foreground text-sm font-medium truncate">{displayName}</p>
+              <p className="text-sidebar-muted text-xs truncate">{displayHandle}</p>
             </div>
-            <button className="text-sidebar-muted hover:text-sidebar-foreground">
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="text-sidebar-muted hover:text-sidebar-foreground"
+              aria-label="Log out"
+            >
               <LogOut size={16} />
             </button>
           </div>
@@ -154,13 +172,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </button>
 
             <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center text-foreground text-xs font-bold">
-              AK
+              {initials}
             </div>
           </div>
         </header>
 
         <main className="flex-1 p-4 lg:p-6 max-w-[1400px] w-full mx-auto">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>

@@ -3,6 +3,7 @@ from .base import *  # noqa: F403
 from .base import DATABASES
 from .base import INSTALLED_APPS
 from .base import REDIS_URL
+from .base import REST_FRAMEWORK
 from .base import SPECTACULAR_SETTINGS
 from .base import env
 
@@ -12,6 +13,17 @@ from .base import env
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["example.com"])
+# Same-origin SPA + API (e.g. https://YOUR_DOMAIN,https://www.YOUR_DOMAIN).
+# https://docs.djangoproject.com/en/dev/ref/settings/#csrf-trusted-origins
+CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+# Dashboard CRM: never allow unauthenticated access (see local.py for dev-only override).
+CRM_OPEN_PERMISSIONS = False
+
+# Phase 1 (single EC2 / Dokploy, no celeryworker): set CELERY_TASK_ALWAYS_EAGER=True
+# in the production env so WA/campaign tasks (if any) run inline. Phase 2: set False
+# and start a celeryworker (+ optional celerybeat). Base already reads this from env.
+# CELERY_TASK_ALWAYS_EAGER = env.bool(...)  # see config.settings.base
 
 # DATABASES
 # ------------------------------------------------------------------------------
@@ -64,12 +76,14 @@ SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
 )
 
 
+# Prefer EC2 instance role; only set keys when Dokploy cannot use the instance profile.
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html#settings
-AWS_ACCESS_KEY_ID = env("DJANGO_AWS_ACCESS_KEY_ID")
+AWS_ACCESS_KEY_ID = env("DJANGO_AWS_ACCESS_KEY_ID", default="")
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html#settings
-AWS_SECRET_ACCESS_KEY = env("DJANGO_AWS_SECRET_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = env("DJANGO_AWS_SECRET_ACCESS_KEY", default="")
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html#settings
 AWS_STORAGE_BUCKET_NAME = env("DJANGO_AWS_STORAGE_BUCKET_NAME")
+# Public-read via CloudFront/OAC or bucket policy — no expiring signed URLs in API.
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html#settings
 AWS_QUERYSTRING_AUTH = False
 # DO NOT change these unless you know what you're doing.
@@ -182,9 +196,20 @@ LOGGING = {
 
 # django-rest-framework
 # -------------------------------------------------------------------------------
+# Light anon throttle for public check-in (no OTP). Override via env if needed.
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,
+    "DEFAULT_THROTTLE_RATES": {
+        **REST_FRAMEWORK.get("DEFAULT_THROTTLE_RATES", {}),
+        "check_in": env.str("DJANGO_CHECK_IN_THROTTLE", default="40/hour"),
+    },
+}
 # Tools that generate code samples can use SERVERS to point to the correct domain
 SPECTACULAR_SETTINGS["SERVERS"] = [
-    {"url": "https://example.com", "description": "Production server"},
+    {
+        "url": env.str("DJANGO_SPECTACULAR_SERVER_URL", default="https://example.com"),
+        "description": "Production server",
+    },
 ]
 # Your stuff...
 # ------------------------------------------------------------------------------

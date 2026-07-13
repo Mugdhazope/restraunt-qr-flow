@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 import requests
 from django.conf import settings
@@ -13,8 +14,37 @@ logger = logging.getLogger(__name__)
 
 
 def _graph_api_recipient_phone(to: str) -> str:
-    """WhatsApp Cloud API expects the recipient as digits only (country code, no +)."""
-    return "".join(ch for ch in to if ch.isdigit())
+    """Normalize recipient for WhatsApp Cloud API (digits only, country code, no +)."""
+    raw = (to or "").strip()
+    digits = "".join(ch for ch in raw if ch.isdigit())
+    if not digits:
+        return ""
+
+    if digits.startswith("00"):
+        digits = digits[2:]
+
+    default_cc = "".join(
+        ch for ch in (getattr(settings, "WHATSAPP_DEFAULT_COUNTRY_CODE", "") or "") if ch.isdigit()
+    )
+    if default_cc:
+        # Common local formats in CRM data (India-first default): 10 digits, or 0-prefixed 11 digits.
+        if len(digits) == 10:
+            return f"{default_cc}{digits}"
+        if len(digits) == 11 and digits.startswith("0"):
+            return f"{default_cc}{digits[1:]}"
+
+    return digits
+
+
+_ws_run = re.compile(r"\s+")
+
+
+def sanitize_template_parameter_text(value: str) -> str:
+    """Meta rejects template param text with newlines/tabs or more than 4 consecutive spaces."""
+    s = (value or "").strip()
+    if not s:
+        return ""
+    return _ws_run.sub(" ", s)
 
 
 def _meta_error_fields(response: requests.Response) -> tuple[int | None, int | None]:
@@ -46,19 +76,13 @@ class WhatsAppClient:
         if not self.access_token or not self.phone_number_id:
             raise WhatsAppConfigError("WhatsApp access token or phone number ID is not configured")
 
-    def send_text_message(self, to: str, message: str) -> dict:
-        recipient = _graph_api_recipient_phone(to)
+    def _post_messages(self, to_for_logs: str, payload: dict) -> dict:
+        recipient = payload.get("to")
         if not recipient:
-            logger.error("WhatsApp send: empty recipient after normalizing phone", extra={"phone": to})
+            logger.error("WhatsApp send: missing to", extra={"phone": to_for_logs})
             raise WhatsAppAPIError("Invalid recipient phone for WhatsApp API")
 
         url = f"{self._graph_base_url()}/{self.phone_number_id}/messages"
-        payload = {
-            "messaging_product": "whatsapp",
-            "to": recipient,
-            "type": "text",
-            "text": {"body": message},
-        }
         headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
@@ -74,7 +98,7 @@ class WhatsAppClient:
         except requests.RequestException as exc:
             logger.exception(
                 "WhatsApp request failed phone=%s recipient=%s",
-                to,
+                to_for_logs,
                 recipient,
             )
             raise WhatsAppAPIError("Failed to call WhatsApp API") from exc
@@ -85,7 +109,7 @@ class WhatsAppClient:
             logger.error(
                 "WhatsApp API error status=%s phone=%s recipient=%s body=%s",
                 response.status_code,
-                to,
+                to_for_logs,
                 recipient,
                 snippet,
             )
@@ -101,7 +125,63 @@ class WhatsAppClient:
         except ValueError as exc:
             logger.exception(
                 "WhatsApp API returned invalid JSON phone=%s body=%s",
-                to,
+                to_for_logs,
                 response.text[:500],
             )
             raise WhatsAppAPIError("Invalid WhatsApp API response") from exc
+
+    def send_text_message(self, to: str, message: str) -> dict:
+        recipient = _graph_api_recipient_phone(to)
+        if not recipient:
+            logger.error("WhatsApp send: empty recipient after normalizing phone", extra={"phone": to})
+            raise WhatsAppAPIError("Invalid recipient phone for WhatsApp API")
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": recipient,
+            "type": "text",
+            "text": {"body": message},
+        }
+        return self._post_messages(to, payload)
+
+    def send_template_message(
+        self,
+        to: str,
+        *,
+        template_name: str,
+        language_code: str,
+        body_parameters: list[str],
+    ) -> dict:
+        """Send an approved template; ``body_parameters`` map to {{1}}, {{2}}, … in template body."""
+        recipient = _graph_api_recipient_phone(to)
+        if not recipient:
+            logger.error("WhatsApp template: empty recipient", extra={"phone": to})
+            raise WhatsAppAPIError("Invalid recipient phone for WhatsApp API")
+
+        name = (template_name or "").strip()
+        if not name:
+            raise WhatsAppAPIError("Template name is required")
+
+        lang = (language_code or "en").strip() or "en"
+        template_obj: dict = {
+            "name": name,
+            "language": {"code": lang},
+        }
+        if body_parameters:
+            template_obj["components"] = [
+                {
+                    "type": "body",
+                    "parameters": [
+                        {"type": "text", "text": sanitize_template_parameter_text(str(p))}
+                        for p in body_parameters
+                    ],
+                },
+            ]
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": recipient,
+            "type": "template",
+            "template": template_obj,
+        }
+        return self._post_messages(to, payload)

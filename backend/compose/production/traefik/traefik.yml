@@ -1,3 +1,5 @@
+# Replace YOUR_DOMAIN (and ACME email) before deploy, or let Dokploy manage
+# Traefik and omit this bundled Traefik service (see docs/DEPLOY_AWS_DOKPLOY.md).
 log:
   level: INFO
 
@@ -19,7 +21,7 @@ certificatesResolvers:
   letsencrypt:
     # https://doc.traefik.io/traefik/https/acme/#lets-encrypt
     acme:
-      email: 'mugdha@example.com'
+      email: 'ops@YOUR_DOMAIN'
       storage: /etc/traefik/acme/acme.json
       # https://doc.traefik.io/traefik/https/acme/#httpchallenge
       httpChallenge:
@@ -27,16 +29,30 @@ certificatesResolvers:
 
 http:
   routers:
-    web-secure-router:
-      rule: 'Host(`example.com`) || Host(`www.example.com`)'
+    # API / admin / auth / Django static → gunicorn
+    web-secure-django:
+      rule: >-
+        (Host(`YOUR_DOMAIN`) || Host(`www.YOUR_DOMAIN`)) &&
+        (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/accounts`) ||
+         PathPrefix(`/static`) || PathPrefix(`/media`))
       entryPoints:
         - web-secure
       middlewares:
         - csrf
       service: django
       tls:
-        # https://doc.traefik.io/traefik/routing/routers/#certresolver
         certResolver: letsencrypt
+      priority: 100
+
+    # SPA (everything else on the same host)
+    web-secure-frontend:
+      rule: 'Host(`YOUR_DOMAIN`) || Host(`www.YOUR_DOMAIN`)'
+      entryPoints:
+        - web-secure
+      service: frontend
+      tls:
+        certResolver: letsencrypt
+      priority: 1
 
   middlewares:
     csrf:
@@ -50,6 +66,10 @@ http:
       loadBalancer:
         servers:
           - url: http://django:5000
+    frontend:
+      loadBalancer:
+        servers:
+          - url: http://frontend:80
 
 providers:
   # https://doc.traefik.io/traefik/master/providers/file/

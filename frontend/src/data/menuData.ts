@@ -1,3 +1,5 @@
+import { DEFAULT_RESTAURANT_SLUG } from "@/lib/defaultRestaurantSlug";
+
 export interface MenuItem {
   name: string;
   description: string;
@@ -6,6 +8,10 @@ export interface MenuItem {
   jain?: boolean;
   featured?: boolean;
   isNew?: boolean;
+  /** Absolute URL from public menu API when staff uploaded an image */
+  imageUrl?: string | null;
+  /** Display scale percent (50–200). Missing → 100. */
+  imageScale?: number;
 }
 
 export interface MenuCategory {
@@ -23,59 +29,102 @@ export interface RestaurantConfig {
   menu: MenuCategory[];
 }
 
+/** Clone base dishes with unique names until `target` total items (offline / scale demo). */
+function expandMenuToTarget(categories: MenuCategory[], target: number): MenuCategory[] {
+  const total = categories.reduce((n, c) => n + c.items.length, 0);
+  if (total >= target) return categories;
+
+  const next = categories.map((c) => ({
+    ...c,
+    items: c.items.map((i) => ({ ...i })),
+  }));
+  const used = new Map<string, Set<string>>();
+  for (const c of next) {
+    used.set(c.name, new Set(c.items.map((i) => i.name)));
+  }
+
+  const sources = next.flatMap((c) => c.items.map((item) => ({ cat: c.name, item })));
+  let copyN = 2;
+  let si = 0;
+  let count = total;
+  while (count < target) {
+    const src = sources[si % sources.length]!;
+    si += 1;
+    const names = used.get(src.cat)!;
+    let candidate = `${src.item.name} (${copyN})`;
+    while (names.has(candidate)) {
+      copyN += 1;
+      candidate = `${src.item.name} (${copyN})`;
+    }
+    names.add(candidate);
+    const cat = next.find((c) => c.name === src.cat)!;
+    cat.items.push({
+      ...src.item,
+      name: candidate,
+      featured: false,
+      isNew: false,
+    });
+    count += 1;
+    if (si % sources.length === 0) copyN += 1;
+  }
+  return next;
+}
+
+const DOUGH_JOE_MENU_BASE: MenuCategory[] = [
+  {
+    name: "Wood Fired Pizzas",
+    items: [
+      { name: "Classic Margherita", description: "San Marzano Tomato Sauce, Fior Di Latte, Fresh Basil", price: 650, tag: "Bestseller", jain: true, featured: true },
+      { name: "Mamma Mia Truffle", description: "Alfredo Sauce, Mushrooms, Fior di Latte, Truffle Oil, Fresh Parsley", price: 680, tag: "Chef's Pick", isNew: true },
+      { name: "Pesto Genovese", description: "Basil Pesto, Fior di Latte, Cherry Tomatoes, Baby Spinach, Parmesan Shavings", price: 650, jain: true },
+      { name: "White Whisper", description: "Alfredo Sauce, Fior di Latte, Garlic-infused Olive oil and Rosemary", price: 600 },
+      { name: "Garden Party", description: "San Marzano Tomato Sauce, Fior di Latte, Charred Zucchini, Bell peppers, Eggplant, Onion, and Basil Pesto Drizzle", price: 650, jain: true },
+      { name: "The Feta Fiesta", description: "San Marzano Tomato Sauce, Fior di Latte, Sautéed Spinach, Feta Cheese, Sun-Dried Tomatoes, Black Olives", price: 650, jain: true },
+      { name: "Cheesy Chaos", description: "Alfredo, Fior di Latte, Blue Cheese, Cheddar, and Straticella, Hot Honey Drizzle", price: 700 },
+      { name: "Papa's Chicken Pepperoni", description: "San Marzano Tomato Sauce, Chicken Pepperoni, Fior di Latte, Red Bell Pepper. Try with hot honey!", price: 650, tag: "Popular" },
+      { name: "Pollo Piccante", description: "San Marzano Tomato Sauce, Spicy Grilled Chicken, Jalapeños, Caramelized Onions, Mozzarella, Roasted Red Pepper", price: 650 },
+    ],
+  },
+  {
+    name: "Non Veg Appetizers",
+    items: [
+      { name: "Crispy Parm Poppers", description: "Juicy Chicken Bites Coated in Parmesan and Herbs, Served with Sriracha Mayo", price: 450, isNew: true },
+      { name: "Lemon Pepper Wings", description: "Oven-baked Wings Tossed in Lemon, Pepper, and Butter, Served with Ranch", price: 480, tag: "Popular" },
+      { name: "Lamb Meatballs", description: "Juicy Lamb Meatballs in House Marinara Sauce, Served with Sourdough Bread", price: 650, featured: true },
+      { name: "Fish & Chips", description: "Classic Battered Fish, Served with House Fries & Tartar Sauce", price: 600 },
+      { name: "Diavola Prawns", description: "Jalapeño-spiked Marinara, Prawns, Fresh Basil, Served with Sourdough Bread", price: 620 },
+      { name: "Butter Garlic Prawns", description: "Juicy Prawns Tossed in Butter, Garlic, and Herbs, Served with Sourdough Bread", price: 620 },
+    ],
+  },
+  {
+    name: "Sides",
+    items: [
+      { name: "Garlic Bread", description: "Toasted with butter, garlic, herbs", price: 199 },
+      { name: "Cheesy Fries", description: "Loaded with cheddar sauce & jalapeños", price: 249, tag: "Popular" },
+      { name: "Mozzarella Sticks", description: "Crispy fried, marinara dip", price: 299 },
+      { name: "Bruschetta", description: "Tomato, basil, balsamic on toasted ciabatta", price: 279 },
+    ],
+  },
+  {
+    name: "Shakes & Drinks",
+    items: [
+      { name: "Cookie Dough Shake", description: "Vanilla ice cream, cookie chunks, whipped cream", price: 319, tag: "Bestseller", featured: true },
+      { name: "Nutella Shake", description: "Rich chocolate hazelnut, topped with brownie", price: 339, isNew: true },
+      { name: "Fresh Lemonade", description: "Classic lemon, mint, soda option available", price: 179 },
+      { name: "Cold Coffee", description: "Espresso, milk, ice, chocolate drizzle", price: 249, tag: "Popular" },
+    ],
+  },
+];
+
 export const restaurants: Record<string, RestaurantConfig> = {
-  doughandjoe: {
-    id: "doughandjoe",
+  [DEFAULT_RESTAURANT_SLUG]: {
+    id: DEFAULT_RESTAURANT_SLUG,
     name: "Dough & Joe",
     tagline: "Wood-fired goodness, served with love.",
     accentColor: "0 72% 51%",
     accentBg: "bg-red-50",
     accentText: "text-red-600",
-    menu: [
-      {
-        name: "Wood Fired Pizzas",
-        items: [
-          { name: "Classic Margherita", description: "San Marzano Tomato Sauce, Fior Di Latte, Fresh Basil", price: 650, tag: "Bestseller", jain: true, featured: true },
-          { name: "Mamma Mia Truffle", description: "Alfredo Sauce, Mushrooms, Fior di Latte, Truffle Oil, Fresh Parsley", price: 680, tag: "Chef's Pick", isNew: true },
-          { name: "Pesto Genovese", description: "Basil Pesto, Fior di Latte, Cherry Tomatoes, Baby Spinach, Parmesan Shavings", price: 650, jain: true },
-          { name: "White Whisper", description: "Alfredo Sauce, Fior di Latte, Garlic-infused Olive oil and Rosemary", price: 600 },
-          { name: "Garden Party", description: "San Marzano Tomato Sauce, Fior di Latte, Charred Zucchini, Bell peppers, Eggplant, Onion, and Basil Pesto Drizzle", price: 650, jain: true },
-          { name: "The Feta Fiesta", description: "San Marzano Tomato Sauce, Fior di Latte, Sautéed Spinach, Feta Cheese, Sun-Dried Tomatoes, Black Olives", price: 650, jain: true },
-          { name: "Cheesy Chaos", description: "Alfredo, Fior di Latte, Blue Cheese, Cheddar, and Straticella, Hot Honey Drizzle", price: 700 },
-          { name: "Papa's Chicken Pepperoni", description: "San Marzano Tomato Sauce, Chicken Pepperoni, Fior di Latte, Red Bell Pepper. Try with hot honey!", price: 650, tag: "Popular" },
-          { name: "Pollo Piccante", description: "San Marzano Tomato Sauce, Spicy Grilled Chicken, Jalapeños, Caramelized Onions, Mozzarella, Roasted Red Pepper", price: 650 },
-        ],
-      },
-      {
-        name: "Non Veg Appetizers",
-        items: [
-          { name: "Crispy Parm Poppers", description: "Juicy Chicken Bites Coated in Parmesan and Herbs, Served with Sriracha Mayo", price: 450, isNew: true },
-          { name: "Lemon Pepper Wings", description: "Oven-baked Wings Tossed in Lemon, Pepper, and Butter, Served with Ranch", price: 480, tag: "Popular" },
-          { name: "Lamb Meatballs", description: "Juicy Lamb Meatballs in House Marinara Sauce, Served with Sourdough Bread", price: 650, featured: true },
-          { name: "Fish & Chips", description: "Classic Battered Fish, Served with House Fries & Tartar Sauce", price: 600 },
-          { name: "Diavola Prawns", description: "Jalapeño-spiked Marinara, Prawns, Fresh Basil, Served with Sourdough Bread", price: 620 },
-          { name: "Butter Garlic Prawns", description: "Juicy Prawns Tossed in Butter, Garlic, and Herbs, Served with Sourdough Bread", price: 620 },
-        ],
-      },
-      {
-        name: "Sides",
-        items: [
-          { name: "Garlic Bread", description: "Toasted with butter, garlic, herbs", price: 199 },
-          { name: "Cheesy Fries", description: "Loaded with cheddar sauce & jalapeños", price: 249, tag: "Popular" },
-          { name: "Mozzarella Sticks", description: "Crispy fried, marinara dip", price: 299 },
-          { name: "Bruschetta", description: "Tomato, basil, balsamic on toasted ciabatta", price: 279 },
-        ],
-      },
-      {
-        name: "Shakes & Drinks",
-        items: [
-          { name: "Cookie Dough Shake", description: "Vanilla ice cream, cookie chunks, whipped cream", price: 319, tag: "Bestseller", featured: true },
-          { name: "Nutella Shake", description: "Rich chocolate hazelnut, topped with brownie", price: 339, isNew: true },
-          { name: "Fresh Lemonade", description: "Classic lemon, mint, soda option available", price: 179 },
-          { name: "Cold Coffee", description: "Espresso, milk, ice, chocolate drizzle", price: 249, tag: "Popular" },
-        ],
-      },
-    ],
+    menu: expandMenuToTarget(DOUGH_JOE_MENU_BASE, 150),
   },
   thenest: {
     id: "thenest",

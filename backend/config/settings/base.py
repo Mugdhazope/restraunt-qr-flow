@@ -47,7 +47,24 @@ LOCALE_PATHS = [str(BASE_DIR / "locale")]
 # DATABASES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
-DATABASES = {"default": env.db("DATABASE_URL")}
+# DATABASE_URL is exported in compose/production/django/entrypoint for the main process.
+# docker compose exec does not re-run the entrypoint, so fall back to POSTGRES_* from env_file.
+_database_url = env.str("DATABASE_URL", default="").strip()
+if not _database_url:
+    _pg_keys = (
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_HOST",
+        "POSTGRES_PORT",
+        "POSTGRES_DB",
+    )
+    _pg = [env.str(k, default="").strip() for k in _pg_keys]
+    if not all(_pg):
+        msg = "Set the DATABASE_URL environment variable"
+        raise environ.ImproperlyConfigured(msg)
+    user, password, host, port, name = _pg
+    _database_url = f"postgres://{user}:{password}@{host}:{port}/{name}"
+DATABASES = {"default": env.db_url_config(_database_url)}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -82,6 +99,7 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
+    "django_filters",
     "drf_spectacular",
 ]
 
@@ -93,6 +111,8 @@ LOCAL_APPS = [
     "kotak.menu",
     "kotak.feedback",
     "kotak.campaigns",
+    "kotak.dashboard",
+    "kotak.layouts",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -173,6 +193,10 @@ STATICFILES_FINDERS = [
 MEDIA_ROOT = str(APPS_DIR / "media")
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
 MEDIA_URL = "/media/"
+# Optional menu image matting (Python 3.14 app): HTTP sidecar base URL, e.g. http://bg_removal:8765
+MENU_BG_REMOVAL_URL = env("MENU_BG_REMOVAL_URL", default="").strip()
+# Optional fallback when sidecar is unset: https://www.remove.bg/api
+REMOVEBG_API_KEY = env("REMOVEBG_API_KEY", default="").strip()
 
 # TEMPLATES
 # ------------------------------------------------------------------------------
@@ -276,10 +300,18 @@ WHATSAPP_GRAPH_API_VERSION = env("WHATSAPP_GRAPH_API_VERSION", default="v22.0").
 WHATSAPP_ACCESS_TOKEN = env("WHATSAPP_ACCESS_TOKEN", default="").strip()
 WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="").strip()
 WHATSAPP_WEBHOOK_VERIFY_TOKEN = env("WHATSAPP_WEBHOOK_VERIFY_TOKEN", default="").strip()
+WHATSAPP_DEFAULT_COUNTRY_CODE = env("WHATSAPP_DEFAULT_COUNTRY_CODE", default="91").strip()
 FEEDBACK_PROMPT_DELAY_SECONDS = env.int("FEEDBACK_PROMPT_DELAY_SECONDS", default=1800)
 # Used when Restaurant.google_review_link is empty (optional dev convenience).
 DEFAULT_GOOGLE_REVIEW_LINK = env("DEFAULT_GOOGLE_REVIEW_LINK", default="").strip()
-
+# Fallback when Restaurant.whatsapp_otp_template_name is empty (body {{1}} = OTP code).
+WHATSAPP_OTP_TEMPLATE_NAME = env("WHATSAPP_OTP_TEMPLATE_NAME", default="").strip()
+WHATSAPP_OTP_TEMPLATE_LANGUAGE = env("WHATSAPP_OTP_TEMPLATE_LANGUAGE", default="en").strip()
+# SMS OTP (MSG91)
+SMS_API_KEY = env("SMS_API_KEY", default="").strip()
+SMS_SENDER_ID = env("SMS_SENDER_ID", default="").strip()
+SMS_TEMPLATE_ID = env("SMS_TEMPLATE_ID", default="").strip()
+SMS_OTP_EXPIRY_SECONDS = env.int("SMS_OTP_EXPIRY_SECONDS", default=300)
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
@@ -287,6 +319,12 @@ CELERY_TIMEZONE = TIME_ZONE
 # When True, tasks run in the Django/Celery caller process (no worker). See local.py default for dev.
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 CELERY_TASK_EAGER_PROPAGATES = env.bool("CELERY_TASK_EAGER_PROPAGATES", default=True)
+CELERY_BEAT_SCHEDULE = {
+    "run-inactive-customers-automation-every-day": {
+        "task": "kotak.dashboard.tasks.run_inactive_customers_automation_task",
+        "schedule": 60 * 60 * 24,
+    },
+}
 
 # django-allauth
 # ------------------------------------------------------------------------------
@@ -317,7 +355,16 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    # Scoped rates applied only where throttle_scope / throttle_classes are set.
+    "DEFAULT_THROTTLE_RATES": {
+        "check_in": "40/hour",
+    },
 }
+
+# Admin CRM: customers with last_visit before this cutoff (or null) match INACTIVE campaigns.
+CRM_INACTIVE_VISIT_DAYS = env.int("CRM_INACTIVE_VISIT_DAYS", default=90)
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
 CORS_URLS_REGEX = r"^/api/.*$"
@@ -346,6 +393,22 @@ SPECTACULAR_SETTINGS = {
     "TAGS": [
         {"name": "Authentication", "description": "Create and use API tokens."},
         {"name": "Users", "description": "Current user profile and account data."},
+        {
+            "name": "Dashboard",
+            "description": "Staff-only restaurant CRM summary and metrics.",
+        },
+        {
+            "name": "CRM Customers",
+            "description": "Staff-only customer list and detail for a restaurant.",
+        },
+        {
+            "name": "CRM Feedback",
+            "description": "Staff-only feedback listing for a restaurant.",
+        },
+        {
+            "name": "CRM Campaigns",
+            "description": "Staff-only WhatsApp campaign sends for a restaurant.",
+        },
     ],
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,

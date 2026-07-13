@@ -6,7 +6,8 @@ class CustomerTag(models.TextChoices):
     VIP = "vip", _("VIP")
     FREQUENT = "frequent", _("Frequent")
     FIRST_TIME = "first_time", _("First time")
-    REGULAR = "regular", _("Regular")
+    NEUTRAL = "neutral", _("Neutral")
+    INACTIVE = "inactive", _("Inactive")
 
 
 class Customer(models.Model):
@@ -16,6 +17,7 @@ class Customer(models.Model):
         related_name="customers",
         verbose_name=_("restaurant"),
     )
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     name = models.CharField(_("name"), max_length=255)
     phone = models.CharField(_("phone"), max_length=32)
     total_visits = models.PositiveIntegerField(_("total visits"), default=0)
@@ -27,6 +29,9 @@ class Customer(models.Model):
         default=CustomerTag.FIRST_TIME,
     )
     is_active = models.BooleanField(_("active"), default=True)
+    phone_verified = models.BooleanField(_("phone verified"), default=False)
+    otp_verified_at = models.DateTimeField(_("otp verified at"), null=True, blank=True)
+    notes = models.TextField(_("notes"), blank=True)
 
     class Meta:
         ordering = ["name"]

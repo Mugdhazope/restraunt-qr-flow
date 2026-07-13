@@ -1,0 +1,116 @@
+# Dokploy Phase 1 stack — NO bundled Traefik (Dokploy Traefik terminates TLS).
+#
+# Dokploy UI:
+#   Compose file: backend/docker-compose.dokploy.yml
+#   Build env: VITE_PUBLIC_APP_ORIGIN=https://YOUR_DOMAIN
+#   Secrets: .django.example + .postgres.example (replace YOUR_* / CHANGE_ME_*)
+#
+# Domains tab (preferred) OR labels below (replace YOUR_DOMAIN):
+#   django  — Host + PathPrefix(/api|/admin|/accounts|/static) → port 5000
+#             stripPath: OFF (Django expects full /api/… paths)
+#   frontend — Host + PathPrefix(/) → port 80  (lower priority than API routes)
+#
+# Network: attach to external dokploy-network so Traefik can reach containers.
+
+volumes:
+  production_postgres_data: {}
+  production_postgres_data_backups: {}
+
+networks:
+  dokploy-network:
+    external: true
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: ./compose/production/django/Dockerfile
+    image: kotak_production_django
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./.envs/.production/.django
+      - ./.envs/.production/.postgres
+    command: /start
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/csrf/')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks:
+      - dokploy-network
+      - default
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      # Replace YOUR_DOMAIN before deploy if not using Dokploy Domains UI injection
+      - traefik.http.routers.kotak-django.rule=(Host(`YOUR_DOMAIN`) || Host(`www.YOUR_DOMAIN`)) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/accounts`) || PathPrefix(`/static`))
+      - traefik.http.routers.kotak-django.entrypoints=websecure
+      - traefik.http.routers.kotak-django.tls.certResolver=letsencrypt
+      - traefik.http.routers.kotak-django.priority=100
+      - traefik.http.routers.kotak-django.service=kotak-django
+      - traefik.http.services.kotak-django.loadbalancer.server.port=5000
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_PUBLIC_APP_ORIGIN: ${VITE_PUBLIC_APP_ORIGIN:-https://YOUR_DOMAIN}
+    image: kotak_production_frontend
+    depends_on:
+      - django
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+      - default
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.kotak-frontend.rule=Host(`YOUR_DOMAIN`) || Host(`www.YOUR_DOMAIN`)
+      - traefik.http.routers.kotak-frontend.entrypoints=websecure
+      - traefik.http.routers.kotak-frontend.tls.certResolver=letsencrypt
+      - traefik.http.routers.kotak-frontend.priority=1
+      - traefik.http.routers.kotak-frontend.service=kotak-frontend
+      - traefik.http.services.kotak-frontend.loadbalancer.server.port=80
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: kotak_production_postgres
+    volumes:
+      - production_postgres_data:/var/lib/postgresql/data
+      - production_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.production/.postgres
+    restart: unless-stopped
+    networks:
+      - default
+
+  redis:
+    image: docker.io/redis:7.2
+    restart: unless-stopped
+    networks:
+      - default
+
+  awscli:
+    build:
+      context: .
+      dockerfile: ./compose/production/aws/Dockerfile
+    env_file:
+      - ./.envs/.production/.django
+    volumes:
+      - production_postgres_data_backups:/backups:z
+    networks:
+      - default
+      - dokploy-network
