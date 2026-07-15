@@ -2,8 +2,9 @@
 #
 # Dokploy UI:
 #   Compose file: backend/docker-compose.dokploy.yml
-#   Build env: VITE_PUBLIC_APP_ORIGIN=https://YOUR_DOMAIN
-#   Secrets: .django.example + .postgres.example (replace YOUR_* / CHANGE_ME_*)
+#   Build env: VITE_PUBLIC_APP_ORIGIN=https://morph.origin4.co
+#   Secrets: copy .envs/.production/dokploy.env.example → Dokploy Environment editor
+#   (saved as backend/.env on the server — not committed)
 #
 # Domains tab (preferred) OR labels below (replace YOUR_DOMAIN):
 #   django  — Host + PathPrefix(/api|/admin|/accounts|/static) → port 5000
@@ -30,8 +31,7 @@ services:
       - postgres
       - redis
     env_file:
-      - ./.envs/.production/.django
-      - ./.envs/.production/.postgres
+      - .env
     command: /start
     restart: unless-stopped
     healthcheck:
@@ -53,7 +53,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
       # Replace YOUR_DOMAIN before deploy if not using Dokploy Domains UI injection
-      - traefik.http.routers.kotak-django.rule=(Host(`YOUR_DOMAIN`) || Host(`www.YOUR_DOMAIN`)) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/accounts`) || PathPrefix(`/static`))
+      - traefik.http.routers.kotak-django.rule=(Host(`morph.origin4.co`) || Host(`www.morph.origin4.co`)) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/accounts`) || PathPrefix(`/static`))
       - traefik.http.routers.kotak-django.entrypoints=websecure
       - traefik.http.routers.kotak-django.tls.certResolver=letsencrypt
       - traefik.http.routers.kotak-django.priority=100
@@ -65,7 +65,7 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
       args:
-        VITE_PUBLIC_APP_ORIGIN: ${VITE_PUBLIC_APP_ORIGIN:-https://YOUR_DOMAIN}
+        VITE_PUBLIC_APP_ORIGIN: ${VITE_PUBLIC_APP_ORIGIN:-https://morph.origin4.co}
     image: kotak_production_frontend
     depends_on:
       - django
@@ -76,7 +76,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
-      - traefik.http.routers.kotak-frontend.rule=Host(`YOUR_DOMAIN`) || Host(`www.YOUR_DOMAIN`)
+      - traefik.http.routers.kotak-frontend.rule=Host(`morph.origin4.co`) || Host(`www.morph.origin4.co`)
       - traefik.http.routers.kotak-frontend.entrypoints=websecure
       - traefik.http.routers.kotak-frontend.tls.certResolver=letsencrypt
       - traefik.http.routers.kotak-frontend.priority=1
@@ -92,7 +92,7 @@ services:
       - production_postgres_data:/var/lib/postgresql/data
       - production_postgres_data_backups:/backups
     env_file:
-      - ./.envs/.production/.postgres
+      - .env
     restart: unless-stopped
     networks:
       - default
@@ -108,7 +108,7 @@ services:
       context: .
       dockerfile: ./compose/production/aws/Dockerfile
     env_file:
-      - ./.envs/.production/.django
+      - .env
     volumes:
       - production_postgres_data_backups:/backups:z
     networks:
