@@ -72,7 +72,9 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 USER django
 
-RUN DATABASE_URL="" \
+# Dummy DATABASE_URL — compilemessages only needs settings to load, not a live DB.
+# Empty DATABASE_URL fails base.py (requires DATABASE_URL or POSTGRES_*).
+RUN DATABASE_URL="sqlite:////tmp/compilemessages.db" \
   DJANGO_SETTINGS_MODULE="config.settings.test" \
   python manage.py compilemessages
 
