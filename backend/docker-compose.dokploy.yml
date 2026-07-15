@@ -1,17 +1,15 @@
-# Dokploy Phase 1 stack — NO bundled Traefik (Dokploy Traefik terminates TLS).
+# Dokploy Phase 1 stack — nginx gateway + Dokploy Traefik TLS.
 #
-# Dokploy UI:
-#   Compose file: backend/docker-compose.dokploy.yml
-#   Build env: VITE_PUBLIC_APP_ORIGIN=https://morph.origin4.co
-#   Secrets: copy .envs/.production/dokploy.env.example → Dokploy Environment editor
+# Traffic: Traefik (HTTPS) → nginx:80 → django:5000 | frontend:80
+# Compose file: backend/docker-compose.dokploy.yml
+# Build env: VITE_PUBLIC_APP_ORIGIN=https://morph.origin4.co
+# Secrets: paste .envs/.production/dokploy.env.example into Dokploy Environment
 #   (saved as backend/.env on the server — not committed)
 #
-# Domains tab (preferred) OR labels below (replace YOUR_DOMAIN):
-#   django  — Host + PathPrefix(/api|/admin|/accounts|/static) → port 5000
-#             stripPath: OFF (Django expects full /api/… paths)
-#   frontend — Host + PathPrefix(/) → port 80  (lower priority than API routes)
+# Domains: attach ONLY to nginx service (port 80), OR use Traefik labels below.
+# django + frontend are internal (no Traefik labels).
 #
-# Network: attach to external dokploy-network so Traefik can reach containers.
+# Network: nginx joins dokploy-network so Traefik can reach it.
 
 volumes:
   production_postgres_data: {}
@@ -47,18 +45,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - dokploy-network
       - default
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=dokploy-network
-      # Replace YOUR_DOMAIN before deploy if not using Dokploy Domains UI injection
-      - traefik.http.routers.kotak-django.rule=(Host(`morph.origin4.co`) || Host(`www.morph.origin4.co`)) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/accounts`) || PathPrefix(`/static`))
-      - traefik.http.routers.kotak-django.entrypoints=websecure
-      - traefik.http.routers.kotak-django.tls.certResolver=letsencrypt
-      - traefik.http.routers.kotak-django.priority=100
-      - traefik.http.routers.kotak-django.service=kotak-django
-      - traefik.http.services.kotak-django.loadbalancer.server.port=5000
 
   frontend:
     build:
@@ -71,17 +58,30 @@ services:
       - django
     restart: unless-stopped
     networks:
+      - default
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./compose/production/nginx/Dockerfile
+    image: kotak_production_nginx
+    depends_on:
+      - django
+      - frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
       - dokploy-network
       - default
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
-      - traefik.http.routers.kotak-frontend.rule=Host(`morph.origin4.co`) || Host(`www.morph.origin4.co`)
-      - traefik.http.routers.kotak-frontend.entrypoints=websecure
-      - traefik.http.routers.kotak-frontend.tls.certResolver=letsencrypt
-      - traefik.http.routers.kotak-frontend.priority=1
-      - traefik.http.routers.kotak-frontend.service=kotak-frontend
-      - traefik.http.services.kotak-frontend.loadbalancer.server.port=80
+      - traefik.http.routers.kotak-web.rule=Host(`morph.origin4.co`) || Host(`www.morph.origin4.co`)
+      - traefik.http.routers.kotak-web.entrypoints=websecure
+      - traefik.http.routers.kotak-web.tls.certResolver=letsencrypt
+      - traefik.http.routers.kotak-web.service=kotak-web
+      - traefik.http.services.kotak-web.loadbalancer.server.port=80
 
   postgres:
     build:
@@ -113,4 +113,3 @@ services:
       - production_postgres_data_backups:/backups:z
     networks:
       - default
-      - dokploy-network
