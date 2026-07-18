@@ -1,3 +1,8 @@
+import {
+  resolveOutletLogoUrl,
+  stripRestaurantLogoImageUrls,
+  themeWithOutletLogo,
+} from "@/layouts/outletLogo";
 import { describe, expect, it } from "vitest";
 import {
   buildBookPages,
@@ -24,6 +29,7 @@ import {
   snapFrame,
   updateFrame,
 } from "@/layouts/treeUtils";
+import { getTheme } from "@/data/restaurantThemes";
 
 describe("layout defaults", () => {
   it("provides a root with frames for every page key", () => {
@@ -271,5 +277,43 @@ describe("150-item menu scale", () => {
     expect(next[keyB]?.nameStyle).toMatchObject({ x: 10, y: 20, fontSize: 24 });
     expect(Object.keys(next)).toHaveLength(TOTAL);
     expect(elapsed).toBeLessThan(500);
+  });
+});
+
+describe("outlet logo", () => {
+  it("prefers scanner_theme logoUrl over page imageUrl", () => {
+    const welcome = defaultLayoutFor("welcome");
+    welcome.root.children![0]!.props = {
+      ...welcome.root.children![0]!.props,
+      imageUrl: "/media/legacy.png",
+    };
+    expect(resolveOutletLogoUrl("/media/outlet.png", { welcome })).toBe("/media/outlet.png");
+  });
+
+  it("falls back to first RestaurantLogo imageUrl when outlet logo missing", () => {
+    const welcome = defaultLayoutFor("welcome");
+    const logo = welcome.root.children!.find((c) => c.type === "RestaurantLogo");
+    expect(logo).toBeTruthy();
+    logo!.props = { ...logo!.props, imageUrl: "/media/from-welcome.png" };
+    expect(resolveOutletLogoUrl(null, { welcome })).toBe("/media/from-welcome.png");
+  });
+
+  it("applies one logo on theme for all pages", () => {
+    const base = getTheme("anything");
+    const welcome = defaultLayoutFor("welcome");
+    const logo = welcome.root.children!.find((c) => c.type === "RestaurantLogo")!;
+    logo.props = { ...logo.props, imageUrl: "/media/shared.png" };
+    const themed = themeWithOutletLogo(base, { welcome });
+    expect(themed.logoUrl).toBe("/media/shared.png");
+  });
+
+  it("strips per-node imageUrl so outlet logo stays canonical", () => {
+    const welcome = defaultLayoutFor("welcome");
+    const logo = welcome.root.children!.find((c) => c.type === "RestaurantLogo")!;
+    logo.props = { ...logo.props, imageUrl: "/media/x.png", size: "lg" };
+    const cleaned = stripRestaurantLogoImageUrls(welcome.root);
+    const cleanedLogo = cleaned.children!.find((c) => c.type === "RestaurantLogo")!;
+    expect(cleanedLogo.props.imageUrl).toBeUndefined();
+    expect(cleanedLogo.props.size).toBe("lg");
   });
 });

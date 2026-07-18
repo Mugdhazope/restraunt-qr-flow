@@ -16,6 +16,7 @@ import {
   type DetailVisibility,
   type ItemLabelStyle,
 } from "@/layouts/itemLabelStyles";
+import { resolveThemeFont } from "@/layouts/textStyles";
 import { itemImageSrc, itemImageScaleStyle } from "./menuImages";
 import { MenuItemBadges, itemHasBadges } from "./MenuItemBadges";
 
@@ -100,6 +101,7 @@ function resolveMaxLines(style: ItemLabelStyle): 1 | 2 {
 function DetailEditableLabel({
   text,
   style,
+  theme,
   themeColor,
   fontFamily,
   fontWeight,
@@ -114,6 +116,7 @@ function DetailEditableLabel({
 }: {
   text: string;
   style: ItemLabelStyle;
+  theme: RestaurantTheme;
   themeColor: string;
   fontFamily: string;
   fontWeight: number | string;
@@ -130,6 +133,8 @@ function DetailEditableLabel({
 
   const boxWidth = style.width ?? 72;
   const maxLines = resolveMaxLines(style);
+  const resolvedFamily = resolveThemeFont(theme, style.fontFamily, fontFamily);
+  const resolvedAlign = style.textAlign ?? align;
 
   const patchWidth = (nextWidth: number, fromEdge: "w" | "e") => {
     if (!onStyleChange) return;
@@ -179,8 +184,8 @@ function DetailEditableLabel({
         left: `${style.x}%`,
         top: `${style.y}%`,
         width: `${boxWidth}%`,
-        transform: align === "right" ? "translate(-100%, 0)" : "translate(0, 0)",
-        textAlign: align,
+        transform: resolvedAlign === "right" ? "translate(-100%, 0)" : "translate(0, 0)",
+        textAlign: resolvedAlign,
         zIndex: 20,
         outline: editable && selected ? "1.5px solid #2563eb" : editable ? "1px dashed rgba(37,99,235,0.35)" : undefined,
         outlineOffset: 3,
@@ -194,11 +199,11 @@ function DetailEditableLabel({
       <p
         className={editable ? "cursor-move" : undefined}
         style={{
-          fontFamily,
+          fontFamily: resolvedFamily,
           fontSize: style.fontSize,
           color: style.color || themeColor,
           letterSpacing,
-          fontWeight,
+          fontWeight: style.fontWeight ?? fontWeight,
           lineHeight,
           margin: 0,
           overflow: "hidden",
@@ -608,6 +613,7 @@ const MenuItemDetail = ({
       <DetailEditableLabel
         text={item.name.toUpperCase()}
         style={nameStyle}
+        theme={theme}
         themeColor={theme.text}
         fontFamily={theme.typography.fonts.heading}
         fontWeight={theme.typography.weights.itemName}
@@ -624,6 +630,7 @@ const MenuItemDetail = ({
         <DetailEditableLabel
           text={item.description}
           style={descriptionStyle}
+          theme={theme}
           themeColor={theme.textSecondary}
           fontFamily={theme.typography.fonts.body}
           fontWeight={theme.typography.weights.body}
@@ -640,6 +647,7 @@ const MenuItemDetail = ({
       <DetailEditableLabel
         text={`₹${item.price}`}
         style={priceStyle}
+        theme={theme}
         themeColor={theme.primary}
         fontFamily={theme.typography.fonts.price}
         fontWeight={theme.typography.weights.price}
@@ -727,7 +735,7 @@ const MenuItemDetail = ({
   return (
     <motion.div
       className={shellClass}
-      style={{ background: theme.background }}
+      style={{ background: "transparent" }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -776,6 +784,7 @@ const MenuItemDetail = ({
             <DetailEditableLabel
               text={`${currentIndex + 1} / ${totalItems}`}
               style={counterStyleMerged}
+              theme={theme}
               themeColor={theme.textSecondary}
               fontFamily={theme.typography.fonts.ui}
               fontWeight={theme.typography.weights.ui}
@@ -819,7 +828,7 @@ const MenuItemDetail = ({
               style={{
                 fontFamily: theme.typography.fonts.heading,
                 fontSize: "clamp(52px, 16vw, 84px)",
-                color: theme.primary,
+                color: theme.pageTitle ?? theme.primary,
                 opacity,
                 marginTop: i === 0 ? "96px" : "8px",
                 letterSpacing: theme.typography.letterSpacing.heading,

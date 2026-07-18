@@ -40,7 +40,7 @@ export const COMPONENT_REGISTRY: Record<string, LayoutComponentDef & { Render: R
     type: "RestaurantLogo",
     label: "Restaurant Logo",
     category: "brand",
-    defaultProps: { size: "md", align: "center" },
+    defaultProps: { size: "md", align: "center", objectFit: "cover", borderRadius: 12 },
     defaultFrame: { x: 35, y: 8, w: 30, h: null },
     Render: RestaurantLogoRender,
   },
@@ -214,5 +214,6 @@ export function toolboxForPage(pageKey: PageKey): (LayoutComponentDef & { Render
 }
 
 export function getComponent(type: string) {
+  if (type === "Button") return COMPONENT_REGISTRY.CTAButton;
   return COMPONENT_REGISTRY[type];
 }

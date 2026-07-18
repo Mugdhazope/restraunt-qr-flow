@@ -1,4 +1,5 @@
 import { DEFAULT_RESTAURANT_SLUG } from "@/lib/defaultRestaurantSlug";
+import type { PageBackgroundProps } from "@/layouts/pageBackground";
 
 export type TagEmojiKey = "new" | "featured" | "popular" | "bestseller" | "chefs_pick" | "jain";
 
@@ -8,8 +9,33 @@ export type ScannerTagStyle = {
   emoji?: string;
 };
 
+/** Outlet-level QR appearance overrides (Settings + Layout Editor). */
 export type ScannerThemeOverrides = {
+  /** Solid fallback / legacy background hex */
   background?: string;
+  backgroundType?: "solid" | "gradient" | "image";
+  gradientFrom?: string;
+  gradientTo?: string;
+  gradientAngle?: number;
+  backgroundImage?: string | null;
+  overlayColor?: string;
+  overlayOpacity?: number;
+  imageOpacity?: number;
+  blur?: number;
+  brightness?: number;
+  backgroundSize?: "cover" | "contain";
+  backgroundPosition?: "center" | "top" | "bottom" | "left" | "right";
+  backgroundRepeat?: "no-repeat" | "repeat" | "repeat-x" | "repeat-y";
+  /** Primary body text */
+  text?: string;
+  textSecondary?: string;
+  primary?: string;
+  /** Large category watermark on menu book pages (Desserts, New This Week, …) */
+  pageTitle?: string;
+  /** Outlet logo image URL — used by RestaurantLogo when no per-node imageUrl */
+  logoUrl?: string | null;
+  /** Outlet tagline — used wherever Restaurant Name shows a tagline */
+  tagline?: string | null;
   tags?: Partial<Record<TagEmojiKey, ScannerTagStyle>>;
 };
 
@@ -35,6 +61,8 @@ export interface RestaurantTheme {
   accent: string;
   text: string;
   textSecondary: string;
+  /** Big category watermark on menu pages; falls back to primary when unset */
+  pageTitle?: string;
   tagBestseller: { bg: string; text: string };
   tagChefsPick: { bg: string; text: string };
   tagPopular: { bg: string; text: string };
@@ -97,6 +125,14 @@ export interface RestaurantTheme {
 
   // Style
   style: "bold" | "minimal";
+
+  /**
+   * Rich QR / page background from scanner_theme (solid/gradient/image).
+   * PageRoot merges this under node.props as fallback.
+   */
+  pageBackground?: PageBackgroundProps;
+  /** Outlet logo from scanner_theme.logoUrl */
+  logoUrl?: string | null;
 }
 
 export const restaurantThemes: Record<string, RestaurantTheme> = {
@@ -266,6 +302,48 @@ export function applyScannerTheme(
   if (overrides.background && typeof overrides.background === "string") {
     next.background = overrides.background;
   }
+  if (overrides.text && typeof overrides.text === "string") {
+    next.text = overrides.text;
+  }
+  if (overrides.textSecondary && typeof overrides.textSecondary === "string") {
+    next.textSecondary = overrides.textSecondary;
+  }
+  if (overrides.primary && typeof overrides.primary === "string") {
+    next.primary = overrides.primary;
+  }
+  if (overrides.pageTitle && typeof overrides.pageTitle === "string") {
+    next.pageTitle = overrides.pageTitle;
+  }
+  if (typeof overrides.logoUrl === "string" && overrides.logoUrl.trim()) {
+    next.logoUrl = overrides.logoUrl.trim();
+  } else if (overrides.logoUrl === null || overrides.logoUrl === "") {
+    next.logoUrl = null;
+  }
+  if (typeof overrides.tagline === "string") {
+    next.tagline = overrides.tagline.trim();
+  } else if (overrides.tagline === null) {
+    next.tagline = "";
+  }
+
+  const pageBackground: PageBackgroundProps = {};
+  if (overrides.backgroundType) pageBackground.backgroundType = overrides.backgroundType;
+  if (overrides.background) pageBackground.background = overrides.background;
+  if (overrides.gradientFrom) pageBackground.gradientFrom = overrides.gradientFrom;
+  if (overrides.gradientTo) pageBackground.gradientTo = overrides.gradientTo;
+  if (typeof overrides.gradientAngle === "number") pageBackground.gradientAngle = overrides.gradientAngle;
+  if (overrides.backgroundImage) pageBackground.backgroundImage = overrides.backgroundImage;
+  if (overrides.overlayColor) pageBackground.overlayColor = overrides.overlayColor;
+  if (typeof overrides.overlayOpacity === "number") pageBackground.overlayOpacity = overrides.overlayOpacity;
+  if (typeof overrides.imageOpacity === "number") pageBackground.imageOpacity = overrides.imageOpacity;
+  if (typeof overrides.blur === "number") pageBackground.blur = overrides.blur;
+  if (typeof overrides.brightness === "number") pageBackground.brightness = overrides.brightness;
+  if (overrides.backgroundSize) pageBackground.backgroundSize = overrides.backgroundSize;
+  if (overrides.backgroundPosition) pageBackground.backgroundPosition = overrides.backgroundPosition;
+  if (overrides.backgroundRepeat) pageBackground.backgroundRepeat = overrides.backgroundRepeat;
+  if (Object.keys(pageBackground).length) {
+    next.pageBackground = pageBackground;
+  }
+
   const tags = overrides.tags;
   if (tags && typeof tags === "object") {
     (Object.keys(TAG_FIELD) as TagEmojiKey[]).forEach((key) => {

@@ -20,7 +20,10 @@ export function mergePublicMenu(menuKey: string, data: PublicMenuResponse): Rest
     ...base,
     id: menuKey,
     name: data.restaurant.name,
-    tagline: base.tagline,
+    tagline:
+      typeof data.restaurant.scanner_theme?.tagline === "string"
+        ? data.restaurant.scanner_theme.tagline
+        : base.tagline,
     menu: data.categories.map((c) => ({
       name: c.name,
       items: c.items.map(

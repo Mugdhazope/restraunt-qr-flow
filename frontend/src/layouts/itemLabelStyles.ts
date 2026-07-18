@@ -12,6 +12,12 @@ export type ItemLabelStyle = {
   width?: number;
   /** Clamp to 1 line (expanded) or 2 lines (collapsed). */
   maxLines?: 1 | 2;
+  /** Font weight override (number or CSS string). */
+  fontWeight?: number | string;
+  /** Theme font key (`heading` | `body` | `price` | `ui`) or raw CSS font stack. */
+  fontFamily?: string;
+  /** Text alignment. */
+  textAlign?: "left" | "center" | "right";
 };
 
 export type ItemLabelField = "name" | "price" | "tags" | "tapHint";
@@ -147,6 +153,9 @@ export function mergeLabelStyle(
     color: override.color ?? base.color,
     width: override.width ?? base.width,
     maxLines: override.maxLines ?? base.maxLines,
+    fontWeight: override.fontWeight ?? base.fontWeight,
+    fontFamily: override.fontFamily ?? base.fontFamily,
+    textAlign: override.textAlign ?? base.textAlign,
   };
 }
 

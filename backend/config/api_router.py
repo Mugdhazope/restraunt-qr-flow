@@ -13,6 +13,7 @@ from kotak.dashboard.api.views import MenuItemViewSet
 from kotak.dashboard.api.views import MessageTemplateViewSet
 from kotak.dashboard.api.views import RestaurantViewSet
 from kotak.dashboard.api.views import TeamMembershipViewSet
+from kotak.layouts.views import LayoutAssetUploadView
 from kotak.layouts.views import PageLayoutViewSet
 from kotak.users.api.views import UserViewSet
 
@@ -38,6 +39,7 @@ _layouts = PageLayoutViewSet.as_view({"get": "list"})
 _layout_page = PageLayoutViewSet.as_view({"get": "retrieve_page", "put": "upsert"})
 _layout_reset = PageLayoutViewSet.as_view({"post": "reset"})
 _layout_default = PageLayoutViewSet.as_view({"get": "default_template"})
+_layout_assets = LayoutAssetUploadView.as_view()
 
 app_name = "api"
 urlpatterns = [
@@ -46,4 +48,5 @@ urlpatterns = [
     path("layouts/", _layout_page, name="layouts-page"),
     path("layouts/reset/", _layout_reset, name="layouts-reset"),
     path("layouts/default/", _layout_default, name="layouts-default"),
+    path("layouts/assets/", _layout_assets, name="layouts-assets"),
 ]

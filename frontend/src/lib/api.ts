@@ -192,18 +192,8 @@ export async function logoutStaff(): Promise<void> {
   }
 }
 
-export type ScannerTagStyle = {
-  bg?: string;
-  text?: string;
-  emoji?: string;
-};
-
-export type ScannerThemeOverrides = {
-  background?: string;
-  tags?: Partial<
-    Record<"new" | "featured" | "popular" | "bestseller" | "chefs_pick" | "jain", ScannerTagStyle>
-  >;
-};
+export type { ScannerTagStyle, ScannerThemeOverrides } from "@/data/restaurantThemes";
+import type { ScannerThemeOverrides } from "@/data/restaurantThemes";
 
 export type ApiRestaurant = {
   id: number;
@@ -529,6 +519,22 @@ export async function saveStaffLayout(
 
 export async function resetStaffLayout(slug: string, pageKey: string): Promise<ApiPageLayout> {
   return apiFetch<ApiPageLayout>(layoutResetUrl(slug, pageKey), { method: "POST" });
+}
+
+export function layoutAssetsUrl(slug: string) {
+  return `/api/layouts/assets/?restaurant_slug=${encodeURIComponent(slug)}`;
+}
+
+export async function uploadLayoutAsset(
+  slug: string,
+  file: File,
+): Promise<{ id: number; url: string }> {
+  const fd = new FormData();
+  fd.append("image", file);
+  return apiFetch<{ id: number; url: string }>(layoutAssetsUrl(slug), {
+    method: "POST",
+    body: fd,
+  });
 }
 
 export function feedbackUrl(slug: string) {

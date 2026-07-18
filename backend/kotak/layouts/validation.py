@@ -13,6 +13,11 @@ from kotak.layouts.models import PageKey
 MAX_DEPTH = 12
 MAX_NODES = 200
 
+# Legacy / alternate type names → canonical component types
+_COMPONENT_TYPE_ALIASES: dict[str, str] = {
+    "Button": "CTAButton",
+}
+
 _STYLE_KEYS = frozenset(
     {
         "marginTop",
@@ -127,6 +132,7 @@ def _validate_node(
         if strict:
             raise ValidationError({f"{path}.type": ["Required string."]})
         return None
+    type_ = _COMPONENT_TYPE_ALIASES.get(type_, type_)
     if type_ not in ALLOWED_COMPONENT_TYPES:
         if strict:
             raise ValidationError(
@@ -200,5 +206,22 @@ def sanitize_layout_for_public(layout: dict[str, Any], *, page_key: str) -> dict
         return validate_layout_document(layout, page_key=page_key, strict=False)
     except ValidationError:
         from kotak.layouts.defaults import default_layout_for
+        from kotak.layouts.models import PageKey
 
+        if page_key not in PageKey.values:
+            # Orphan / unknown key — never call default_layout_for (raises ValueError)
+            return {
+                "schema_version": 2,
+                "page_key": page_key,
+                "root": {
+                    "id": "root",
+                    "type": "PageRoot",
+                    "visible": True,
+                    "locked": False,
+                    "props": {},
+                    "style": {},
+                    "frame": {"x": 0, "y": 0, "w": 100, "h": None},
+                    "children": [],
+                },
+            }
         return default_layout_for(page_key)

@@ -98,8 +98,8 @@ class Restaurant(models.Model):
         default=dict,
         blank=True,
         help_text=_(
-            "Optional QR menu appearance overrides: background hex and tag "
-            "styles (bg/text/emoji) for new, featured, popular, etc.",
+            "Optional QR menu appearance: background (solid/gradient/image), "
+            "text/primary colors, and tag chip styles (bg/text/emoji).",
         ),
     )
 

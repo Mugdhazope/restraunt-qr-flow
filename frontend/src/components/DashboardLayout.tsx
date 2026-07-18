@@ -144,8 +144,8 @@ const DashboardLayout = () => {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30 shrink-0">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground">
               <Menu size={20} />
@@ -177,7 +177,13 @@ const DashboardLayout = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6 max-w-[1400px] w-full mx-auto">
+        <main
+          className={`flex-1 w-full mx-auto ${
+            location.pathname.startsWith("/dashboard/layout")
+              ? "p-0 max-w-none min-h-0 overflow-hidden"
+              : "p-4 lg:p-6 max-w-[1400px]"
+          }`}
+        >
           <Outlet />
         </main>
       </div>

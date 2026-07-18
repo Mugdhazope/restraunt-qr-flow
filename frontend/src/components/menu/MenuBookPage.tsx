@@ -14,6 +14,7 @@ import {
   type ItemLabelStyle,
   type ItemTextStyles,
 } from "@/layouts/itemLabelStyles";
+import { resolveThemeFont } from "@/layouts/textStyles";
 import { itemImageSrc, itemImageScaleStyle } from "./menuImages";
 import { MenuItemBadges, itemHasBadges } from "./MenuItemBadges";
 
@@ -110,6 +111,7 @@ function resolveMaxLines(style: ItemLabelStyle): 1 | 2 {
 function EditableLabel({
   text,
   style,
+  theme,
   themeColor,
   fontFamily,
   fontWeight,
@@ -123,6 +125,7 @@ function EditableLabel({
 }: {
   text: string;
   style: ItemLabelStyle;
+  theme: RestaurantTheme;
   themeColor: string;
   fontFamily: string;
   fontWeight: number | string;
@@ -137,6 +140,7 @@ function EditableLabel({
   const dragRef = useRef<{ startX: number; startY: number; origin: ItemLabelStyle } | null>(null);
   const boxWidth = style.width ?? 90;
   const maxLines = resolveMaxLines(style);
+  const resolvedFamily = resolveThemeFont(theme, style.fontFamily, fontFamily);
 
   const patchWidth = (nextWidth: number) => {
     if (!onStyleChange) return;
@@ -189,7 +193,7 @@ function EditableLabel({
         width: `${boxWidth}%`,
         transform: "translate(-50%, -50%)",
         zIndex: LAYERS.text,
-        textAlign: "center",
+        textAlign: style.textAlign ?? "center",
         outline: editable && selected ? "1.5px solid #2563eb" : editable ? "1px dashed rgba(37,99,235,0.35)" : undefined,
         outlineOffset: 2,
         touchAction: editable ? "none" : undefined,
@@ -203,11 +207,11 @@ function EditableLabel({
         className={editable ? "cursor-move" : undefined}
         style={{
           margin: 0,
-          fontFamily,
+          fontFamily: resolvedFamily,
           fontSize: style.fontSize,
           color: style.color || themeColor,
           letterSpacing,
-          fontWeight,
+          fontWeight: style.fontWeight ?? fontWeight,
           lineHeight,
           textShadow: "0 2px 10px rgba(255,255,255,0.9), 0 0 2px rgba(0,0,0,0.08)",
           overflow: "hidden",
@@ -470,6 +474,7 @@ const ProductComposition = ({
             <EditableLabel
               text={item.name}
               style={nameStyle}
+              theme={theme}
               themeColor={theme.text}
               fontFamily={theme.typography.fonts.heading}
               fontWeight={theme.typography.weights.itemName}
@@ -489,6 +494,7 @@ const ProductComposition = ({
             <EditableLabel
               text={`₹${item.price}`}
               style={priceStyle}
+              theme={theme}
               themeColor={theme.primary}
               fontFamily={theme.typography.fonts.price}
               fontWeight={theme.typography.weights.price}
@@ -686,7 +692,7 @@ const MenuBookPage = ({
   };
 
   return (
-    <div className="h-full w-full relative overflow-hidden select-none" style={{ background: theme.background }}>
+    <div className="h-full w-full relative overflow-hidden select-none" style={{ background: "transparent" }}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -699,7 +705,7 @@ const MenuBookPage = ({
           style={{
             fontFamily: theme.typography.fonts.heading,
             fontSize: "clamp(40px, 16vw, 68px)",
-            color: theme.primary,
+            color: theme.pageTitle ?? theme.primary,
             opacity: 0.07,
             letterSpacing: theme.typography.letterSpacing.ui,
             fontWeight: theme.typography.weights.heading,
@@ -770,6 +776,7 @@ const MenuBookPage = ({
           <EditableLabel
             text="Tap to view"
             style={tapHintStyle}
+            theme={theme}
             themeColor={theme.primary}
             fontFamily={theme.typography.fonts.ui}
             fontWeight={theme.typography.weights.ui}

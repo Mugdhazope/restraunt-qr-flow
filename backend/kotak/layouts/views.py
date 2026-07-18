@@ -6,6 +6,8 @@ from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import FormParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,6 +18,7 @@ from kotak.dashboard.permissions import IsStaffUser
 from kotak.layouts.defaults import default_layout_for
 from kotak.layouts.models import PageKey
 from kotak.layouts.models import PageLayout
+from kotak.layouts.serializers import LayoutAssetUploadSerializer
 from kotak.layouts.serializers import PageLayoutListItemSerializer
 from kotak.layouts.serializers import PageLayoutSerializer
 from kotak.layouts.serializers import PageLayoutWriteSerializer
@@ -138,6 +141,28 @@ class PageLayoutViewSet(RestaurantScopedMixin, ViewSet):
         return Response(default_layout_for(page_key))
 
 
+@extend_schema(tags=["Layouts"])
+class LayoutAssetUploadView(RestaurantScopedMixin, APIView):
+    """Staff: upload a background image for the layout editor (per outlet)."""
+
+    permission_classes = [IsStaffUser]
+    parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(
+        parameters=[_RESTAURANT_SLUG_PARAM],
+        request=LayoutAssetUploadSerializer,
+        responses={201: OpenApiTypes.OBJECT},
+    )
+    def post(self, request):
+        ser = LayoutAssetUploadSerializer(
+            data=request.data,
+            context={"request": request, "restaurant": self.restaurant},
+        )
+        ser.is_valid(raise_exception=True)
+        asset = ser.save()
+        return Response(ser.to_representation(asset), status=status.HTTP_201_CREATED)
+
+
 class PublicLayoutsAPIView(APIView):
     """Public: all page layouts (or one) for a restaurant slug."""
 
@@ -171,6 +196,9 @@ class PublicLayoutsAPIView(APIView):
 
         pages = []
         for row in qs.order_by("page_key"):
+            # Skip orphan rows (e.g. legacy category_view) so one bad key cannot 500 the API
+            if row.page_key not in PageKey.values:
+                continue
             data = PublicPageLayoutSerializer(row).data
             data["layout"] = sanitize_layout_for_public(row.layout or {}, page_key=row.page_key)
             pages.append(data)

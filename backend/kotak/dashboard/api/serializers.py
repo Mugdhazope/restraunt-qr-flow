@@ -36,13 +36,92 @@ def validate_scanner_theme(value) -> dict:
     if not isinstance(value, dict):
         raise DRFValidationError("scanner_theme must be an object.")
     out: dict = {}
-    if "background" in value and value["background"] not in (None, ""):
-        bg = str(value["background"]).strip()
-        if not _HEX_COLOR_RE.match(bg):
+
+    def _hex(field: str, raw) -> str | None:
+        if raw in (None, ""):
+            return None
+        c = str(raw).strip()
+        if not _HEX_COLOR_RE.match(c):
             raise DRFValidationError(
-                {"background": ["Use a hex color like #RGB or #RRGGBB."]},
+                {field: ["Use a hex color like #RGB or #RRGGBB."]},
             )
+        return c
+
+    bg = _hex("background", value.get("background"))
+    if bg:
         out["background"] = bg
+    for color_field in ("text", "textSecondary", "primary", "pageTitle", "overlayColor", "gradientFrom", "gradientTo"):
+        c = _hex(color_field, value.get(color_field))
+        if c:
+            out[color_field] = c
+
+    bg_type = value.get("backgroundType")
+    if bg_type in ("solid", "gradient", "image"):
+        out["backgroundType"] = bg_type
+
+    img = value.get("backgroundImage")
+    if img not in (None, ""):
+        url = str(img).strip()
+        if not (url.startswith("http://") or url.startswith("https://") or url.startswith("/")):
+            raise DRFValidationError(
+                {"backgroundImage": ["Must be an absolute or site-relative URL."]},
+            )
+        out["backgroundImage"] = url
+
+    logo = value.get("logoUrl")
+    if logo is None:
+        pass
+    elif logo == "":
+        out["logoUrl"] = None
+    else:
+        logo_url = str(logo).strip()
+        if not (
+            logo_url.startswith("http://")
+            or logo_url.startswith("https://")
+            or logo_url.startswith("/")
+        ):
+            raise DRFValidationError(
+                {"logoUrl": ["Must be an absolute or site-relative URL."]},
+            )
+        out["logoUrl"] = logo_url
+
+    if "tagline" in value:
+        raw_tagline = value.get("tagline")
+        if raw_tagline is None:
+            out["tagline"] = ""
+        else:
+            tagline = str(raw_tagline).strip()
+            if len(tagline) > 200:
+                raise DRFValidationError(
+                    {"tagline": ["Tagline must be 200 characters or fewer."]},
+                )
+            out["tagline"] = tagline
+
+    for num_field, lo, hi in (
+        ("gradientAngle", 0, 360),
+        ("overlayOpacity", 0, 1),
+        ("imageOpacity", 0, 1),
+        ("blur", 0, 40),
+        ("brightness", 0, 200),
+    ):
+        if num_field not in value or value[num_field] in (None, ""):
+            continue
+        try:
+            n = float(value[num_field])
+        except (TypeError, ValueError) as exc:
+            raise DRFValidationError({num_field: ["Must be a number."]}) from exc
+        out[num_field] = max(lo, min(hi, n))
+
+    size = value.get("backgroundSize")
+    if size in ("cover", "contain"):
+        out["backgroundSize"] = size
+    pos = value.get("backgroundPosition")
+    if pos in ("center", "top", "bottom", "left", "right"):
+        out["backgroundPosition"] = pos
+    repeat = value.get("backgroundRepeat")
+    if repeat in ("no-repeat", "repeat", "repeat-x", "repeat-y"):
+        out["backgroundRepeat"] = repeat
+
     tags_in = value.get("tags")
     if tags_in is None:
         return out

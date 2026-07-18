@@ -3,6 +3,7 @@ import type { MenuItem, RestaurantConfig } from "@/data/menuData";
 import type { RestaurantTheme } from "@/data/restaurantThemes";
 import { LayoutRenderer } from "@/layouts/LayoutRenderer";
 import { defaultLayoutFor } from "@/layouts/defaults";
+import { themeWithOutletLogo } from "@/layouts/outletLogo";
 import { usePublicLayouts } from "@/layouts/usePublicLayouts";
 import type { LayoutDataContext, LayoutDocument } from "@/layouts/types";
 import { categoryImages } from "@/components/menu/menuImages";
@@ -21,10 +22,11 @@ export function MobileMenuLayout({
   restaurant,
   resolvedId,
   apiSlug,
-  theme,
+  theme: baseTheme,
   onLayoutUnavailable,
 }: Props) {
-  const { getLayout, loading, error } = usePublicLayouts(apiSlug);
+  const { getLayout, layouts, loading, error } = usePublicLayouts(apiSlug);
+  const theme = useMemo(() => themeWithOutletLogo(baseTheme, layouts), [baseTheme, layouts]);
   const menuDoc = useMemo(() => getLayout("menu"), [getLayout]);
   const detailDoc = useMemo(() => getLayout("item_detail"), [getLayout]);
 
@@ -102,7 +104,7 @@ export function MobileMenuLayout({
     const useLayout = Boolean(detailDoc?.root);
     if (useLayout) {
       return (
-        <div className="fixed inset-0 overflow-hidden" style={{ background: theme.background }}>
+        <div className="fixed inset-0 overflow-hidden" style={{ background: "transparent" }}>
           <LayoutRenderer
             document={detailDoc}
             mode="live"
@@ -139,7 +141,7 @@ export function MobileMenuLayout({
   const doc: LayoutDocument = menuDoc ?? defaultLayoutFor("menu");
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ background: theme.background }}>
+    <div className="fixed inset-0 overflow-hidden" style={{ background: "transparent" }}>
       <LayoutRenderer document={doc} mode="live" data={baseData} />
     </div>
   );

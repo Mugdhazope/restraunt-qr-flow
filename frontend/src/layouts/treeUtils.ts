@@ -119,7 +119,7 @@ export function updateNode(
     return {
       ...root,
       ...patch,
-      props: patch.props ? { ...root.props, ...patch.props } : root.props,
+      props: patch.props !== undefined ? { ...patch.props } : root.props,
       style: patch.style ? { ...root.style, ...patch.style } : root.style,
       frame: patch.frame ? { ...root.frame, ...patch.frame } : root.frame,
     };

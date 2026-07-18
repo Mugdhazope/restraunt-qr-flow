@@ -22,26 +22,39 @@ import {
   EyeOff,
   GripVertical,
   Lock,
+  PanelLeft,
+  PanelRight,
   Plus,
   Redo2,
   Save,
   Trash2,
   Unlock,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRestaurant } from "@/context/RestaurantContext";
 import { restaurants, type RestaurantConfig } from "@/data/menuData";
+import type { ScannerThemeOverrides } from "@/data/restaurantThemes";
 import {
   fetchPublicMenu,
   fetchStaffLayout,
   resetStaffLayout,
   saveStaffLayout,
+  uploadLayoutAsset,
+  apiFetch,
+  restaurantDetailUrl,
 } from "@/lib/api";
 import { mergePublicMenu } from "@/lib/publicMenu";
 import { resolveScanContext } from "@/lib/scanContext";
 import { useScannerTheme } from "@/lib/useScannerTheme";
 import { LayoutRenderer } from "@/layouts/LayoutRenderer";
 import { PAGE_KEYS, defaultLayoutFor } from "@/layouts/defaults";
+import { BackgroundFields, pickPageBackgroundProps } from "@/layouts/BackgroundFields";
+import {
+  resolveOutletLogoUrl,
+  stripRestaurantLogoImageUrls,
+  themeWithOutletLogo,
+} from "@/layouts/outletLogo";
 import {
   DEFAULT_DETAIL_NAME_LABEL,
   DEFAULT_DETAIL_PRICE_LABEL,
@@ -64,6 +77,12 @@ import {
   type ItemLabelStyle,
   type ItemTextStyles,
 } from "@/layouts/itemLabelStyles";
+import { sanitizePageOverlayProps } from "@/layouts/pageBackground";
+import { OutletAppearancePanel } from "@/layouts/OutletAppearancePanel";
+import {
+  FONT_WEIGHT_OPTIONS,
+  THEME_FONT_OPTIONS,
+} from "@/layouts/textStyles";
 import { toolboxForPage, getComponent } from "@/layouts/registry";
 import { copyLayoutNode, pasteLayoutNode, hasClipboard } from "@/layouts/clipboard";
 import {
@@ -423,6 +442,150 @@ function resolveLabelBase(
   return defaultMenuLabel(field);
 }
 
+function TextStyleFields({
+  props,
+  setProp,
+  defaults,
+}: {
+  props: Record<string, unknown>;
+  setProp: (key: string, value: unknown) => void;
+  defaults?: { color?: string };
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Text style</p>
+      <label className="flex items-center justify-between gap-2 text-xs">
+        <span>Color</span>
+        <input
+          type="color"
+          className="h-8 w-14 border rounded cursor-pointer"
+          value={String(props.color || defaults?.color || "#111111")}
+          onChange={(e) => setProp("color", e.target.value)}
+        />
+      </label>
+      <label className="flex items-center justify-between gap-2 text-xs">
+        <span>Size (px)</span>
+        <input
+          type="number"
+          min={8}
+          max={96}
+          className="w-20 border rounded px-2 py-1"
+          value={typeof props.fontSize === "number" ? props.fontSize : ""}
+          placeholder="auto"
+          onChange={(e) =>
+            setProp("fontSize", e.target.value === "" ? undefined : Number(e.target.value) || 14)
+          }
+        />
+      </label>
+      <label className="block text-xs">
+        Weight
+        <select
+          className="mt-1 w-full border rounded px-2 py-1"
+          value={props.fontWeight !== undefined && props.fontWeight !== null ? String(props.fontWeight) : ""}
+          onChange={(e) => setProp("fontWeight", e.target.value === "" ? undefined : e.target.value)}
+        >
+          <option value="">Theme default</option>
+          {FONT_WEIGHT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs">
+        Font
+        <select
+          className="mt-1 w-full border rounded px-2 py-1"
+          value={String(props.fontFamily ?? "")}
+          onChange={(e) => setProp("fontFamily", e.target.value || undefined)}
+        >
+          <option value="">Theme default</option>
+          {THEME_FONT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs">
+        Align
+        <select
+          className="mt-1 w-full border rounded px-2 py-1"
+          value={String(props.align ?? "left")}
+          onChange={(e) => setProp("align", e.target.value)}
+        >
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+      </label>
+    </div>
+  );
+}
+
+function LabelExtraStyleFields({
+  active,
+  field,
+  onChange,
+}: {
+  active: ItemLabelStyle;
+  field: ItemLabelField | DetailLabelField;
+  onChange: (patch: Partial<ItemLabelStyle>) => void;
+}) {
+  if (field === "tags" || field === "back") return null;
+  return (
+    <>
+      <label className="block text-xs">
+        Weight
+        <select
+          className="mt-1 w-full border rounded px-2 py-1"
+          value={active.fontWeight !== undefined ? String(active.fontWeight) : ""}
+          onChange={(e) =>
+            onChange({ fontWeight: e.target.value === "" ? undefined : e.target.value })
+          }
+        >
+          <option value="">Theme default</option>
+          {FONT_WEIGHT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs">
+        Font
+        <select
+          className="mt-1 w-full border rounded px-2 py-1"
+          value={String(active.fontFamily ?? "")}
+          onChange={(e) => onChange({ fontFamily: e.target.value || undefined })}
+        >
+          <option value="">Theme default</option>
+          {THEME_FONT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs">
+        Align
+        <select
+          className="mt-1 w-full border rounded px-2 py-1"
+          value={String(active.textAlign ?? "center")}
+          onChange={(e) =>
+            onChange({ textAlign: e.target.value as ItemLabelStyle["textAlign"] })
+          }
+        >
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+      </label>
+    </>
+  );
+}
+
+
 const DETAIL_PROP_KEY: Record<DetailLabelField, string> = {
   name: "nameStyle",
   price: "priceStyle",
@@ -565,6 +728,13 @@ function DetailElementInspector({
               />
             </label>
           )}
+          <LabelExtraStyleFields
+            active={active}
+            field={selected}
+            onChange={(patch) =>
+              setProp(DETAIL_PROP_KEY[selected], { ...active, ...patch })
+            }
+          />
           {selected !== "back" && (
             <div className="grid grid-cols-2 gap-2">
               <label className="text-xs">
@@ -675,6 +845,11 @@ function ItemLabelInspector({
               />
             </label>
           )}
+          <LabelExtraStyleFields
+            active={active}
+            field={field}
+            onChange={(patch) => onChange(field, patch)}
+          />
           <div className="grid grid-cols-2 gap-2">
             <label className="text-xs">
               X %
@@ -707,6 +882,8 @@ function Inspector({
   node,
   pageKey,
   theme,
+  restaurantSlug,
+  outletTagline,
   selectedItemLabel,
   selectedDetailLabel,
   detailItemKey,
@@ -715,10 +892,14 @@ function Inspector({
   onDelete,
   onCopy,
   onMove,
+  onOutletLogoChange,
 }: {
   node: LayoutNode | null;
   pageKey: PageKey;
-  theme: { text: string; primary: string };
+  theme: { text: string; primary: string; background: string; logoUrl?: string | null };
+  restaurantSlug: string;
+  /** Outlet default tagline — placeholder when RestaurantName leaves tagline blank */
+  outletTagline?: string;
   selectedItemLabel: { itemName: string; field: ItemLabelField } | null;
   selectedDetailLabel: DetailLabelField | null;
   /** Active dish key (`category::name`) for Item Detail overrides */
@@ -728,22 +909,77 @@ function Inspector({
   onDelete: () => void;
   onCopy: () => void;
   onMove: (dir: "up" | "down") => void;
+  /** Persist logo at outlet level (scanner_theme) — one logo for all pages */
+  onOutletLogoChange?: (logoUrl: string | null) => Promise<void> | void;
 }) {
-  if (!node || node.type === "PageRoot") {
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  if (!node) {
     return (
       <div className="text-sm text-muted-foreground p-3">
         Select a component on the canvas or in layers.
       </div>
     );
   }
-  const def = getComponent(node.type);
+
   const props = node.props ?? {};
+  const setProp = (key: string, value: unknown) => {
+    const next = { ...props };
+    if (value === undefined) delete next[key];
+    else next[key] = value;
+    onChange({ props: next });
+  };
+
+  const uploadLogo = async (file: File | undefined) => {
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const { url } = await uploadLayoutAsset(restaurantSlug, file);
+      // Strip any leftover per-node image so outlet logo is the only source
+      if (props.imageUrl) setProp("imageUrl", undefined);
+      await onOutletLogoChange?.(url);
+      toast.success("Outlet logo updated — same on every page");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  if (node.type === "PageRoot") {
+    const pageProps = sanitizePageOverlayProps(props);
+    const setPageProp = (key: string, value: unknown) => {
+      const next = { ...pageProps };
+      if (value === undefined) delete next[key];
+      else next[key] = value;
+      onChange({ props: sanitizePageOverlayProps(next) });
+    };
+    return (
+      <div className="space-y-4 p-3 text-sm">
+        <div>
+          <p className="font-semibold text-foreground">Page</p>
+          <p className="text-[11px] text-muted-foreground">
+            Page background is the surface where items live. Outlet appearance sits behind this page.
+          </p>
+        </div>
+        <BackgroundFields
+          title="Page background"
+          props={pageProps}
+          setProp={setPageProp}
+          setProps={(next) => onChange({ props: sanitizePageOverlayProps(next) })}
+          restaurantSlug={restaurantSlug}
+          themeBackground={theme.background}
+          allowImage={false}
+        />
+        <p className="text-[10px] text-muted-foreground">Page: {pageKey}</p>
+      </div>
+    );
+  }
+
+  const def = getComponent(node.type);
   const style = node.style ?? {};
   const frame = node.frame ?? { x: 0, y: 0, w: 100, h: null };
 
-  const setProp = (key: string, value: unknown) => {
-    onChange({ props: { ...props, [key]: value } });
-  };
   const setStyle = (key: string, value: number) => {
     onChange({ style: { ...style, [key]: value } });
   };
@@ -878,18 +1114,22 @@ function Inspector({
               <option value="muted">Muted</option>
             </select>
           </label>
+          <TextStyleFields props={props} setProp={setProp} defaults={{ color: theme.text }} />
         </div>
       )}
 
       {node.type === "Banner" && (
-        <label className="block text-xs">
-          Banner text
-          <input
-            className="mt-1 w-full border rounded px-2 py-1"
-            value={String(props.text ?? "")}
-            onChange={(e) => setProp("text", e.target.value)}
-          />
-        </label>
+        <div className="space-y-2">
+          <label className="block text-xs">
+            Banner text
+            <input
+              className="mt-1 w-full border rounded px-2 py-1"
+              value={String(props.text ?? "")}
+              onChange={(e) => setProp("text", e.target.value)}
+            />
+          </label>
+          <TextStyleFields props={props} setProp={setProp} defaults={{ color: theme.text }} />
+        </div>
       )}
 
       {node.type === "CTAButton" && (
@@ -914,6 +1154,7 @@ function Inspector({
               <option value="navigate_back">Navigate back</option>
             </select>
           </label>
+          <TextStyleFields props={props} setProp={setProp} defaults={{ color: theme.background }} />
         </div>
       )}
 
@@ -1081,15 +1322,122 @@ function Inspector({
         </>
       )}
 
+      {node.type === "RestaurantLogo" && (
+        <div className="space-y-2">
+          <p className="text-[10px] text-muted-foreground leading-snug">
+            One logo for this outlet — shared on Welcome, Checked In, and every page that shows
+            Restaurant Logo.
+          </p>
+          <label className="block text-xs">
+            Logo image
+            <input
+              type="file"
+              accept="image/*"
+              className="mt-1 w-full text-[11px]"
+              disabled={logoUploading}
+              onChange={(e) => void uploadLogo(e.target.files?.[0])}
+            />
+          </label>
+          {typeof theme.logoUrl === "string" && theme.logoUrl && (
+            <div className="space-y-1">
+              <img
+                src={theme.logoUrl}
+                alt="Outlet logo"
+                className="h-14 w-14 rounded-lg object-cover border"
+              />
+              <button
+                type="button"
+                className="text-[11px] text-destructive underline"
+                onClick={() => void onOutletLogoChange?.(null)}
+              >
+                Remove outlet logo
+              </button>
+            </div>
+          )}
+          {logoUploading && <p className="text-[11px] text-muted-foreground">Uploading…</p>}
+          <label className="block text-xs">
+            Size
+            <select
+              className="mt-1 w-full border rounded px-2 py-1"
+              value={String(props.size ?? "md")}
+              onChange={(e) => setProp("size", e.target.value)}
+            >
+              <option value="sm">Small</option>
+              <option value="md">Medium</option>
+              <option value="lg">Large</option>
+            </select>
+          </label>
+          <label className="block text-xs">
+            Align
+            <select
+              className="mt-1 w-full border rounded px-2 py-1"
+              value={String(props.align ?? "center")}
+              onChange={(e) => setProp("align", e.target.value)}
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </label>
+          <label className="block text-xs">
+            Fit
+            <select
+              className="mt-1 w-full border rounded px-2 py-1"
+              value={String(props.objectFit ?? "cover")}
+              onChange={(e) => setProp("objectFit", e.target.value)}
+            >
+              <option value="cover">Cover</option>
+              <option value="contain">Contain</option>
+            </select>
+          </label>
+          <label className="flex items-center justify-between gap-2 text-xs">
+            <span>Corner radius</span>
+            <input
+              type="number"
+              min={0}
+              max={40}
+              className="w-20 border rounded px-2 py-1"
+              value={typeof props.borderRadius === "number" ? props.borderRadius : 12}
+              onChange={(e) => setProp("borderRadius", Number(e.target.value) || 0)}
+            />
+          </label>
+        </div>
+      )}
+
       {node.type === "RestaurantName" && (
-        <label className="flex items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={Boolean(props.showTagline)}
-            onChange={(e) => setProp("showTagline", e.target.checked)}
-          />
-          Show tagline
-        </label>
+        <div className="space-y-2">
+          <label className="block text-xs">
+            Display text
+            <input
+              className="mt-1 w-full border rounded px-2 py-1"
+              placeholder="Restaurant name"
+              value={String(props.displayText ?? "")}
+              onChange={(e) => setProp("displayText", e.target.value || undefined)}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={Boolean(props.showTagline)}
+              onChange={(e) => setProp("showTagline", e.target.checked)}
+            />
+            Show tagline
+          </label>
+          <p className="text-[10px] text-muted-foreground leading-snug">
+            Edit the outlet tagline in{" "}
+            <span className="font-medium text-foreground">Settings → Appearance</span> (or Outlet
+            appearance). Here you only show or hide it on this page.
+            {outletTagline?.trim() ? (
+              <>
+                {" "}
+                Current: <span className="italic">“{outletTagline.trim()}”</span>
+              </>
+            ) : (
+              <> No tagline set yet.</>
+            )}
+          </p>
+          <TextStyleFields props={props} setProp={setProp} defaults={{ color: theme.text }} />
+        </div>
       )}
 
       <p className="text-[10px] text-muted-foreground">Page: {pageKey}</p>
@@ -1101,7 +1449,8 @@ const LayoutEditor = () => {
   const { selectedOutlet } = useRestaurant();
   const slug = selectedOutlet.restaurantId;
   const { apiSlug, menuKey } = useMemo(() => resolveScanContext(slug), [slug]);
-  const { theme } = useScannerTheme(apiSlug, menuKey);
+  const { theme: baseTheme, overrides: scannerOverrides, setOverrides: setScannerOverrides } =
+    useScannerTheme(apiSlug, menuKey);
   const fallbackRestaurant =
     restaurants[menuKey] ?? restaurants[Object.keys(restaurants)[0]];
 
@@ -1114,6 +1463,10 @@ const LayoutEditor = () => {
   const [dirtyByPage, setDirtyByPage] = useState<Partial<Record<PageKey, boolean>>>({});
   const [loadedPages, setLoadedPages] = useState<Partial<Record<PageKey, boolean>>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [inspectAppearance, setInspectAppearance] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"layers" | "inspector" | null>(null);
+  const [phoneScale, setPhoneScale] = useState(1);
+  const phoneStageRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [savingPage, setSavingPage] = useState<PageKey | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1126,6 +1479,11 @@ const LayoutEditor = () => {
   } | null>(null);
   const [selectedDetailLabel, setSelectedDetailLabel] = useState<DetailLabelField | null>(
     null,
+  );
+
+  const theme = useMemo(
+    () => themeWithOutletLogo(baseTheme, docsByPage),
+    [baseTheme, docsByPage],
   );
 
   const doc = docsByPage[pageKey] ?? defaultLayoutFor(pageKey);
@@ -1223,6 +1581,23 @@ const LayoutEditor = () => {
     void loadPage(pageKey);
   }, [slug, pageKey, loadPage]);
 
+  useEffect(() => {
+    const el = phoneStageRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const phoneW = DESIGN_WIDTH + 24;
+    const phoneH = DESIGN_HEIGHT + 24;
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      const pad = 16;
+      const next = Math.min(1, (width - pad) / phoneW, (height - pad) / phoneH);
+      setPhoneScale(Number.isFinite(next) && next > 0 ? next : 1);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [loading, pageKey]);
+
   const setDocDirty = (nextRoot: LayoutNode) => {
     setDocsByPage((prev) => {
       const next = { ...(prev[pageKey] ?? doc), root: nextRoot };
@@ -1259,7 +1634,7 @@ const LayoutEditor = () => {
   const previewData: LayoutDataContext = {
     restaurant: restaurant ?? null,
     restaurantName: selectedOutlet.name || restaurant?.name || "Restaurant",
-    tagline: restaurant?.tagline,
+    tagline: theme.tagline || restaurant?.tagline,
     theme,
     menu: restaurant?.menu ?? [],
     activeCategory: activeCategory ?? restaurant?.menu[0]?.name ?? null,
@@ -1391,18 +1766,71 @@ const LayoutEditor = () => {
     setSelectedId(node.id);
   };
 
+  const handleOutletLogoChange = useCallback(
+    async (logoUrl: string | null) => {
+      const next = { ...(scannerOverrides ?? {}), logoUrl };
+      if (logoUrl === null) delete next.logoUrl;
+      const body: Record<string, unknown> = {
+        ...pickPageBackgroundProps(next as Record<string, unknown>),
+        ...(typeof next.text === "string" && next.text.trim() ? { text: next.text.trim() } : {}),
+        ...(typeof next.textSecondary === "string" && next.textSecondary.trim()
+          ? { textSecondary: next.textSecondary.trim() }
+          : {}),
+        ...(typeof next.primary === "string" && next.primary.trim()
+          ? { primary: next.primary.trim() }
+          : {}),
+        ...(typeof next.pageTitle === "string" && next.pageTitle.trim()
+          ? { pageTitle: next.pageTitle.trim() }
+          : {}),
+        ...(logoUrl ? { logoUrl } : { logoUrl: null }),
+        ...(typeof next.tagline === "string" ? { tagline: next.tagline } : {}),
+        ...(next.tags ? { tags: next.tags } : {}),
+      };
+      await apiFetch(restaurantDetailUrl(apiSlug), {
+        method: "PATCH",
+        body: JSON.stringify({ scanner_theme: body }),
+      });
+      setScannerOverrides(body as ScannerThemeOverrides);
+    },
+    [apiSlug, scannerOverrides, setScannerOverrides],
+  );
+
+  // Promote legacy per-page RestaurantLogo.imageUrl into outlet logo once per slug.
+  const promotedLogoRef = useRef<string | null>(null);
+  useEffect(() => {
+    promotedLogoRef.current = null;
+  }, [apiSlug]);
+  useEffect(() => {
+    if (scannerOverrides === null) return;
+    if (typeof scannerOverrides.logoUrl === "string" && scannerOverrides.logoUrl.trim()) return;
+    if (promotedLogoRef.current) return;
+    const legacy = resolveOutletLogoUrl(null, docsByPage);
+    if (!legacy) return;
+    promotedLogoRef.current = legacy;
+    void handleOutletLogoChange(legacy).catch(() => {
+      promotedLogoRef.current = null;
+    });
+  }, [docsByPage, scannerOverrides, handleOutletLogoChange]);
+
   const handleSave = async (key: PageKey = pageKey) => {
     const layout = docsByPageRef.current[key] ?? docsByPage[key] ?? (key === pageKey ? doc : null);
     if (!layout) {
       toast.error("Nothing to save for this page yet");
       return;
     }
+    const sanitized: LayoutDocument = {
+      ...layout,
+      root: stripRestaurantLogoImageUrls({
+        ...layout.root,
+        props: sanitizePageOverlayProps(layout.root.props as Record<string, unknown>),
+      }),
+    };
     setSavingPage(key);
     try {
       const saved = await saveStaffLayout(
         slug,
         key,
-        layout as unknown as Record<string, unknown>,
+        sanitized as unknown as Record<string, unknown>,
         versionsByPage[key] ?? 1,
       );
       const savedLayout = saved.layout as unknown as LayoutDocument;
@@ -1485,23 +1913,238 @@ const LayoutEditor = () => {
     toast.success(`Pasted ${node.type}`);
   };
 
+  const openLayers = () => {
+    setMobilePanel("layers");
+  };
+  const openInspector = () => {
+    setMobilePanel("inspector");
+  };
+  const closeMobilePanel = () => setMobilePanel(null);
+
+  const pagesNav = (
+    <div className="space-y-2">
+      {PAGE_KEYS.map((p) => {
+        const isActive = pageKey === p.key;
+        const isDirty = Boolean(dirtyByPage[p.key]);
+        const isSaving = savingPage === p.key;
+        return (
+          <div
+            key={p.key}
+            className={`rounded border ${
+              isActive ? "border-primary/40 bg-primary/5" : "border-transparent"
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setPageKey(p.key);
+                setSelectedId(null);
+                setSelectedItemLabel(null);
+                setSelectedDetailLabel(null);
+                closeMobilePanel();
+              }}
+              className={`w-full text-left px-2 py-1.5 rounded text-sm flex items-center justify-between gap-1 ${
+                isActive ? "font-medium" : "hover:bg-muted"
+              }`}
+            >
+              <span>{p.label}</span>
+              {isDirty && (
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" title="Unsaved" />
+              )}
+            </button>
+            <div className="px-2 pb-2">
+              <button
+                type="button"
+                className="w-full px-2 py-1.5 text-[11px] rounded bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleSave(p.key);
+                }}
+                disabled={!isDirty || saving}
+                title={
+                  isDirty
+                    ? `Save ${p.label} only — other pages stay unchanged`
+                    : `No unsaved changes on ${p.label}`
+                }
+              >
+                <Save size={11} className="inline mr-1" />
+                {isSaving ? "Saving…" : `Save ${p.label}`}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const layersPanel = (
+    <>
+      <div className="p-3 border-b">
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Pages</p>
+        {pagesNav}
+      </div>
+      <div className="p-3 border-b">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Layers</p>
+          <button
+            type="button"
+            className="text-[10px] text-muted-foreground hover:text-foreground"
+            onClick={handlePaste}
+            title="Paste component"
+          >
+            Paste
+          </button>
+        </div>
+        <button
+          type="button"
+          className={`w-full text-left px-2 py-1.5 mb-1 rounded text-xs ${
+            inspectAppearance
+              ? "bg-primary/10 text-foreground font-medium"
+              : "hover:bg-muted"
+          }`}
+          onClick={() => {
+            setInspectAppearance(true);
+            setSelectedId(null);
+            setMobilePanel("inspector");
+          }}
+        >
+          Outlet appearance
+        </button>
+        <button
+          type="button"
+          className={`w-full text-left px-2 py-1.5 mb-1 rounded text-xs ${
+            !inspectAppearance && (selectedId === doc.root.id || !selectedId)
+              ? "bg-primary/10 text-foreground font-medium"
+              : "hover:bg-muted"
+          }`}
+          onClick={() => {
+            setInspectAppearance(false);
+            setSelectedId(doc.root.id);
+            setMobilePanel("inspector");
+          }}
+        >
+          Page background
+        </button>
+        <LayerList
+          nodes={doc.root.children ?? []}
+          selectedId={inspectAppearance ? null : selectedId}
+          onSelect={(id) => {
+            setInspectAppearance(false);
+            setSelectedId(id);
+            setMobilePanel("inspector");
+          }}
+          onReorder={(ids) => setDocDirty(reorderChildren(doc.root, doc.root.id, ids))}
+        />
+      </div>
+      <div className="p-3 flex-1">
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Add component</p>
+        <div className="space-y-1">
+          {toolbox.map((t) => (
+            <button
+              key={t.type}
+              type="button"
+              onClick={() => {
+                setInspectAppearance(false);
+                addComponent(t.type);
+                setMobilePanel("inspector");
+              }}
+              className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded text-xs hover:bg-muted"
+            >
+              <Plus size={12} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
+  const inspectorPanel = (
+    <>
+      <div className="p-3 border-b flex items-center justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Inspector</p>
+        <button
+          type="button"
+          className="lg:hidden p-1 rounded hover:bg-muted text-muted-foreground"
+          onClick={closeMobilePanel}
+          aria-label="Close inspector"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      {inspectAppearance ? (
+        <OutletAppearancePanel
+          restaurantSlug={apiSlug}
+          themeBackground={theme.background}
+          defaults={{
+            text: theme.text,
+            textSecondary: theme.textSecondary,
+            primary: theme.primary,
+            pageTitle: theme.pageTitle ?? theme.primary,
+            tagline: theme.tagline,
+          }}
+          overrides={scannerOverrides}
+          onChange={(next) => setScannerOverrides(next)}
+        />
+      ) : (
+        <Inspector
+          node={selected ?? doc.root}
+          pageKey={pageKey}
+          theme={theme}
+          restaurantSlug={apiSlug}
+          outletTagline={theme.tagline || restaurant?.tagline}
+          selectedItemLabel={selectedItemLabel}
+          selectedDetailLabel={selectedDetailLabel}
+          detailItemKey={pageKey === "item_detail" ? previewDetail?.key : undefined}
+          onOutletLogoChange={handleOutletLogoChange}
+          onChange={(patch) => {
+            const id = selectedId ?? doc.root.id;
+            setDocDirty(updateNode(doc.root, id, patch));
+            if (!selectedId) setSelectedId(doc.root.id);
+          }}
+          onDuplicate={() => {
+            if (!selectedId || selectedId === doc.root.id) return;
+            setDocDirty(duplicateNode(doc.root, selectedId));
+          }}
+          onDelete={() => {
+            if (!selectedId || selectedId === doc.root.id) return;
+            setDocDirty(removeNode(doc.root, selectedId));
+            setSelectedId(null);
+          }}
+          onCopy={() => {
+            if (!selected || selected.type === "PageRoot") return;
+            copyLayoutNode(selected);
+            setClipboardReady(true);
+            toast.success("Copied — paste on any page");
+          }}
+          onMove={(dir) => {
+            if (!selectedId || selectedId === doc.root.id) return;
+            setDocDirty(moveChild(doc.root, selectedId, dir));
+          }}
+        />
+      )}
+    </>
+  );
+
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] -m-4 lg:-m-6">
-      <header className="flex items-center justify-between gap-3 border-b px-4 py-3 bg-card shrink-0">
-        <div>
-          <h1 className="text-lg font-semibold">Mobile Layout Editor</h1>
-          <p className="text-xs text-muted-foreground">
-            {selectedOutlet.name} · editing{" "}
+    <div className="flex flex-col h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] overflow-hidden">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b px-3 sm:px-4 py-3 bg-card shrink-0">
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-lg font-semibold">Mobile Layout Editor</h1>
+          <p className="text-xs text-muted-foreground truncate">
+            {selectedOutlet.name} ·{" "}
             <span className="font-medium text-foreground">{pageLabel}</span>
-            {" · "}
-            {totalItemCount} menu items · each page saves separately
-            {pageKey === "item_detail" ? " · each dish keeps its own layout" : ""}
+            <span className="hidden sm:inline">
+              {" · "}
+              {totalItemCount} menu items · each page saves separately
+              {pageKey === "item_detail" ? " · each dish keeps its own layout" : ""}
+            </span>
           </p>
           {pageKey === "item_detail" && flatItems.length > 0 && (
-            <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <label className="mt-1 flex flex-col xs:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
               Editing item
               <select
-                className="border rounded px-2 py-1 text-foreground max-w-[240px]"
+                className="border rounded px-2 py-1 text-foreground w-full sm:max-w-[240px]"
                 value={previewDetail?.key ?? ""}
                 onChange={(e) => setPreviewItemKey(e.target.value)}
               >
@@ -1514,10 +2157,10 @@ const LayoutEditor = () => {
             </label>
           )}
           {pageKey === "menu" && (restaurant?.menu?.length ?? 0) > 0 && (
-            <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              Category filter (grid)
+            <label className="mt-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
+              Category filter
               <select
-                className="border rounded px-2 py-1 text-foreground max-w-[200px]"
+                className="border rounded px-2 py-1 text-foreground w-full sm:max-w-[200px]"
                 value={activeCategory ?? ""}
                 onChange={(e) => setActiveCategory(e.target.value || null)}
               >
@@ -1530,8 +2173,8 @@ const LayoutEditor = () => {
             </label>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {dirty && <span className="text-xs text-amber-600">Unsaved {pageLabel}</span>}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {dirty && <span className="text-xs text-amber-600">Unsaved</span>}
           <button
             type="button"
             className="px-3 py-1.5 text-xs rounded border hover:bg-muted"
@@ -1547,7 +2190,7 @@ const LayoutEditor = () => {
             onClick={() => void handleReset()}
             disabled={saving}
           >
-            Reset default
+            Reset
           </button>
           <button
             type="button"
@@ -1556,192 +2199,169 @@ const LayoutEditor = () => {
             disabled={!dirty || saving}
           >
             <Save size={12} className="inline mr-1" />
-            {savingPage === pageKey ? "Saving…" : `Save ${pageLabel}`}
+            {savingPage === pageKey ? "Saving…" : "Save"}
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0">
-        <aside className="w-56 border-r bg-card overflow-y-auto shrink-0 flex flex-col">
-          <div className="p-3 border-b">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Pages</p>
-            <div className="space-y-2">
-              {PAGE_KEYS.map((p) => {
-                const isActive = pageKey === p.key;
-                const isDirty = Boolean(dirtyByPage[p.key]);
-                const isSaving = savingPage === p.key;
-                return (
-                  <div
-                  key={p.key}
-                    className={`rounded border ${
-                      isActive ? "border-primary/40 bg-primary/5" : "border-transparent"
-                    }`}
-                  >
-                    <button
-                  type="button"
-                  onClick={() => {
-                    setPageKey(p.key);
-                        setSelectedId(null);
-                        setSelectedItemLabel(null);
-                        setSelectedDetailLabel(null);
-                  }}
-                      className={`w-full text-left px-2 py-1.5 rounded text-sm flex items-center justify-between gap-1 ${
-                        isActive ? "font-medium" : "hover:bg-muted"
-                  }`}
-                >
-                      <span>{p.label}</span>
-                      {isDirty && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" title="Unsaved" />
-                      )}
-                </button>
-                    <div className="px-2 pb-2">
-                      <button
-                        type="button"
-                        className="w-full px-2 py-1.5 text-[11px] rounded bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleSave(p.key);
-                        }}
-                        disabled={!isDirty || saving}
-                        title={
-                          isDirty
-                            ? `Save ${p.label} only — other pages stay unchanged`
-                            : `No unsaved changes on ${p.label}`
-                        }
-                      >
-                        <Save size={11} className="inline mr-1" />
-                        {isSaving ? "Saving…" : `Save ${p.label}`}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="p-3 border-b">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Layers</p>
-              <button
-                type="button"
-                className="text-[10px] text-muted-foreground hover:text-foreground"
-                onClick={handlePaste}
-                title="Paste component"
-              >
-                Paste{clipboardReady ? "" : ""}
-              </button>
-            </div>
-            <LayerList
-              nodes={doc.root.children ?? []}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onReorder={(ids) => setDocDirty(reorderChildren(doc.root, doc.root.id, ids))}
-            />
-          </div>
-          <div className="p-3 flex-1">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Add component</p>
-            <div className="space-y-1">
-              {toolbox.map((t) => (
-                <button
-                  key={t.type}
-                  type="button"
-                  onClick={() => addComponent(t.type)}
-                  className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded text-xs hover:bg-muted"
-                >
-                  <Plus size={12} />
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Mobile page chips */}
+      <div className="lg:hidden flex gap-1.5 overflow-x-auto border-b px-3 py-2 bg-card shrink-0 scrollbar-none">
+        {PAGE_KEYS.map((p) => {
+          const isActive = pageKey === p.key;
+          const isDirty = Boolean(dirtyByPage[p.key]);
+          return (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => {
+                setPageKey(p.key);
+                setSelectedId(null);
+                setSelectedItemLabel(null);
+                setSelectedDetailLabel(null);
+              }}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs border ${
+                isActive
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-background hover:bg-muted border-border"
+              }`}
+            >
+              {p.label}
+              {isDirty ? " ·" : ""}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mobile tools */}
+      <div className="lg:hidden flex gap-2 border-b px-3 py-2 bg-card shrink-0">
+        <button
+          type="button"
+          onClick={openLayers}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs rounded border hover:bg-muted"
+        >
+          <PanelLeft size={14} />
+          Layers
+        </button>
+        <button
+          type="button"
+          onClick={openInspector}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs rounded border hover:bg-muted"
+        >
+          <PanelRight size={14} />
+          Inspector
+        </button>
+      </div>
+
+      <div className="flex flex-1 min-h-0 relative">
+        <aside className="hidden lg:flex w-56 border-r bg-card overflow-y-auto shrink-0 flex-col">
+          {layersPanel}
         </aside>
 
-        <main className="flex-1 flex items-center justify-center bg-muted/40 p-6 overflow-auto">
+        <main
+          ref={phoneStageRef}
+          className="flex-1 flex items-start sm:items-center justify-center bg-muted/40 p-3 sm:p-6 overflow-auto min-w-0"
+        >
           {loading ? (
-            <p className="text-muted-foreground animate-pulse">Loading layout…</p>
+            <p className="text-muted-foreground animate-pulse self-center">Loading layout…</p>
           ) : (
             <div
-              className="relative bg-black rounded-[2rem] p-3 shadow-2xl"
-              style={{ width: DESIGN_WIDTH + 24, height: DESIGN_HEIGHT + 24 }}
+              className="relative shrink-0"
+              style={{
+                width: (DESIGN_WIDTH + 24) * phoneScale,
+                height: (DESIGN_HEIGHT + 24) * phoneScale,
+              }}
             >
               <div
-                className="bg-white rounded-[1.5rem] overflow-hidden relative"
-                style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT }}
+                className="absolute top-0 left-0 bg-black rounded-[2rem] p-3 shadow-2xl origin-top-left"
+                style={{
+                  width: DESIGN_WIDTH + 24,
+                  height: DESIGN_HEIGHT + 24,
+                  transform: `scale(${phoneScale})`,
+                }}
               >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-b-xl z-20" />
-                <FreeformCanvas
-                  document={doc}
-                  data={previewData}
-                  selectedId={selectedId}
-                  onSelect={setSelectedId}
-                  onFrameChange={(id, frame) => {
-                    patchCurrentDoc((prev) => ({
-                      ...prev,
-                      root: updateFrame(prev.root, id, frame),
-                    }));
-                  }}
-                  onUnlock={(id) => {
-                    patchCurrentDoc((prev) => ({
-                      ...prev,
-                      root: updateNode(prev.root, id, { locked: false }),
-                    }));
-                    toast.message("Unlocked — drag to move");
-                  }}
-                />
-              </div>
-              {dirty && (
-                <div className="absolute -bottom-10 left-0 right-0 flex justify-center">
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-xs rounded-full bg-foreground text-background shadow-lg hover:bg-foreground/90 disabled:opacity-50"
-                    onClick={() => void handleSave(pageKey)}
-                    disabled={saving}
-                  >
-                    <Save size={12} className="inline mr-1" />
-                    {savingPage === pageKey ? "Saving…" : `Save ${pageLabel} positions`}
-                  </button>
+                <div
+                  className="rounded-[1.5rem] overflow-hidden relative"
+                  style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, background: "transparent" }}
+                >
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-b-xl z-20" />
+                  <FreeformCanvas
+                    document={doc}
+                    data={previewData}
+                    selectedId={selectedId}
+                    onSelect={(id) => {
+                      setInspectAppearance(false);
+                      setSelectedId(id);
+                    }}
+                    onFrameChange={(id, frame) => {
+                      patchCurrentDoc((prev) => ({
+                        ...prev,
+                        root: updateFrame(prev.root, id, frame),
+                      }));
+                    }}
+                    onUnlock={(id) => {
+                      patchCurrentDoc((prev) => ({
+                        ...prev,
+                        root: updateNode(prev.root, id, { locked: false }),
+                      }));
+                      toast.message("Unlocked — drag to move");
+                    }}
+                  />
                 </div>
-              )}
+              </div>
             </div>
           )}
         </main>
 
-        <aside className="w-64 border-l bg-card overflow-y-auto shrink-0">
-          <div className="p-3 border-b">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Inspector</p>
-          </div>
-          <Inspector
-            node={selected}
-            pageKey={pageKey}
-            theme={theme}
-            selectedItemLabel={selectedItemLabel}
-            selectedDetailLabel={selectedDetailLabel}
-            detailItemKey={pageKey === "item_detail" ? previewDetail?.key : undefined}
-            onChange={(patch) => {
-              if (!selectedId) return;
-              setDocDirty(updateNode(doc.root, selectedId, patch));
-            }}
-            onDuplicate={() => {
-              if (!selectedId) return;
-              setDocDirty(duplicateNode(doc.root, selectedId));
-            }}
-            onDelete={() => {
-              if (!selectedId) return;
-              setDocDirty(removeNode(doc.root, selectedId));
-              setSelectedId(null);
-            }}
-            onCopy={() => {
-              if (!selected) return;
-              copyLayoutNode(selected);
-              setClipboardReady(true);
-              toast.success("Copied — paste on any page");
-            }}
-            onMove={(dir) => {
-              if (!selectedId) return;
-              setDocDirty(moveChild(doc.root, selectedId, dir));
-            }}
-          />
+        <aside className="hidden lg:flex w-64 border-l bg-card overflow-y-auto shrink-0 flex-col">
+          {inspectorPanel}
         </aside>
+
+        {/* Mobile drawers */}
+        {mobilePanel && (
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            <button
+              type="button"
+              className="absolute inset-0 bg-foreground/30"
+              aria-label="Close panel"
+              onClick={closeMobilePanel}
+            />
+            {mobilePanel === "layers" ? (
+              <aside className="relative z-10 w-[min(100%,18rem)] max-w-[85vw] h-full bg-card border-r shadow-xl overflow-y-auto flex flex-col">
+                <div className="p-3 border-b flex items-center justify-between sticky top-0 bg-card z-10">
+                  <p className="text-sm font-medium">Pages & layers</p>
+                  <button
+                    type="button"
+                    className="p-1 rounded hover:bg-muted"
+                    onClick={closeMobilePanel}
+                    aria-label="Close"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {layersPanel}
+              </aside>
+            ) : (
+              <aside className="relative z-10 ml-auto w-[min(100%,20rem)] max-w-[90vw] h-full bg-card border-l shadow-xl overflow-y-auto flex flex-col">
+                {inspectorPanel}
+              </aside>
+            )}
+          </div>
+        )}
       </div>
+
+      {dirty && (
+        <div className="lg:hidden shrink-0 border-t bg-card px-3 py-2">
+          <button
+            type="button"
+            className="w-full px-4 py-2.5 text-xs rounded-lg bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
+            onClick={() => void handleSave(pageKey)}
+            disabled={saving}
+          >
+            <Save size={12} className="inline mr-1" />
+            {savingPage === pageKey ? "Saving…" : `Save ${pageLabel}`}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

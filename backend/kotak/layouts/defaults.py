@@ -87,13 +87,18 @@ def _welcome() -> dict[str, Any]:
         "root": _node(
             "PageRoot",
             node_id="root",
-            props={"padding": 0, "background": None},
+            props={"padding": 0, "backgroundType": "transparent"},
             frame={"x": 0, "y": 0, "w": 100, "h": 100},
             children=[
                 _node(
+                    "RestaurantLogo",
+                    props={"size": "lg", "align": "center", "objectFit": "contain", "borderRadius": 12},
+                    frame={"x": 35, "y": 6, "w": 30, "h": None},
+                ),
+                _node(
                     "RestaurantName",
                     props={"align": "center", "showTagline": True},
-                    frame={"x": 8, "y": 12, "w": 84, "h": None},
+                    frame={"x": 8, "y": 18, "w": 84, "h": None},
                 ),
                 _node(
                     "Text",
@@ -102,12 +107,12 @@ def _welcome() -> dict[str, Any]:
                         "align": "center",
                         "variant": "muted",
                     },
-                    frame={"x": 8, "y": 28, "w": 84, "h": None},
+                    frame={"x": 8, "y": 32, "w": 84, "h": None},
                 ),
                 _node(
                     "CheckInForm",
                     props={"showName": True, "showPhone": True},
-                    frame={"x": 6, "y": 36, "w": 88, "h": None},
+                    frame={"x": 6, "y": 40, "w": 88, "h": None},
                 ),
                 _node(
                     "CTAButton",
@@ -117,7 +122,7 @@ def _welcome() -> dict[str, Any]:
                         "variant": "primary",
                         "width": "full",
                     },
-                    frame={"x": 6, "y": 72, "w": 88, "h": None},
+                    frame={"x": 6, "y": 76, "w": 88, "h": None},
                 ),
             ],
         ),
@@ -131,9 +136,14 @@ def _checked_in() -> dict[str, Any]:
         "root": _node(
             "PageRoot",
             node_id="root",
-            props={"padding": 0, "background": None},
+            props={"padding": 0, "backgroundType": "transparent"},
             frame={"x": 0, "y": 0, "w": 100, "h": 100},
             children=[
+                _node(
+                    "RestaurantLogo",
+                    props={"size": "md", "align": "center", "objectFit": "contain", "borderRadius": 12},
+                    frame={"x": 35, "y": 6, "w": 30, "h": None},
+                ),
                 _node(
                     "Text",
                     props={
@@ -141,12 +151,12 @@ def _checked_in() -> dict[str, Any]:
                         "align": "center",
                         "variant": "heading",
                     },
-                    frame={"x": 8, "y": 14, "w": 84, "h": None},
+                    frame={"x": 8, "y": 18, "w": 84, "h": None},
                 ),
                 _node(
                     "LoyaltySummary",
                     props={"visitGoal": 5, "showProgressBar": True},
-                    frame={"x": 6, "y": 28, "w": 88, "h": None},
+                    frame={"x": 6, "y": 32, "w": 88, "h": None},
                 ),
                 _node(
                     "CTAButton",
@@ -156,7 +166,7 @@ def _checked_in() -> dict[str, Any]:
                         "variant": "primary",
                         "width": "full",
                     },
-                    frame={"x": 6, "y": 62, "w": 88, "h": None},
+                    frame={"x": 6, "y": 66, "w": 88, "h": None},
                 ),
             ],
         ),
@@ -171,7 +181,7 @@ def _menu() -> dict[str, Any]:
         "root": _node(
             "PageRoot",
             node_id="root",
-            props={"padding": 0, "background": None},
+            props={"padding": 0, "backgroundType": "transparent"},
             frame={"x": 0, "y": 0, "w": 100, "h": 100},
             children=[
                 _node(
@@ -193,7 +203,7 @@ def _item_detail() -> dict[str, Any]:
         "root": _node(
             "PageRoot",
             node_id="root",
-            props={"padding": 0, "background": None},
+            props={"padding": 0, "backgroundType": "transparent"},
             frame={"x": 0, "y": 0, "w": 100, "h": 100},
             children=[
                 _node(

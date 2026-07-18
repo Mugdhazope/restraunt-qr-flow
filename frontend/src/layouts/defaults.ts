@@ -39,12 +39,16 @@ export function defaultLayoutFor(pageKey: PageKey): LayoutDocument {
         page_key: "welcome",
         root: node("PageRoot", {
           id: "root",
-          props: { padding: 0, background: null },
+          props: { padding: 0, backgroundType: "transparent" },
           frame: { x: 0, y: 0, w: 100, h: 100 },
           children: [
+            node("RestaurantLogo", {
+              props: { size: "lg", align: "center", objectFit: "contain", borderRadius: 12 },
+              frame: { x: 35, y: 6, w: 30, h: null },
+            }),
             node("RestaurantName", {
               props: { align: "center", showTagline: true },
-              frame: { x: 8, y: 12, w: 84, h: null },
+              frame: { x: 8, y: 18, w: 84, h: null },
             }),
             node("Text", {
               props: {
@@ -52,11 +56,11 @@ export function defaultLayoutFor(pageKey: PageKey): LayoutDocument {
                 align: "center",
                 variant: "muted",
               },
-              frame: { x: 8, y: 28, w: 84, h: null },
+              frame: { x: 8, y: 32, w: 84, h: null },
             }),
             node("CheckInForm", {
               props: { showName: true, showPhone: true },
-              frame: { x: 6, y: 36, w: 88, h: null },
+              frame: { x: 6, y: 40, w: 88, h: null },
             }),
             node("CTAButton", {
               props: {
@@ -65,7 +69,7 @@ export function defaultLayoutFor(pageKey: PageKey): LayoutDocument {
                 variant: "primary",
                 width: "full",
               },
-              frame: { x: 6, y: 72, w: 88, h: null },
+              frame: { x: 6, y: 76, w: 88, h: null },
             }),
           ],
         }),
@@ -76,20 +80,24 @@ export function defaultLayoutFor(pageKey: PageKey): LayoutDocument {
         page_key: "checked_in",
         root: node("PageRoot", {
           id: "root",
-          props: { padding: 0, background: null },
+          props: { padding: 0, backgroundType: "transparent" },
           frame: { x: 0, y: 0, w: 100, h: 100 },
           children: [
+            node("RestaurantLogo", {
+              props: { size: "md", align: "center", objectFit: "contain", borderRadius: 12 },
+              frame: { x: 35, y: 6, w: 30, h: null },
+            }),
             node("Text", {
               props: {
                 text: "You're Checked In!",
                 align: "center",
                 variant: "heading",
               },
-              frame: { x: 8, y: 14, w: 84, h: null },
+              frame: { x: 8, y: 18, w: 84, h: null },
             }),
             node("LoyaltySummary", {
               props: { visitGoal: 5, showProgressBar: true },
-              frame: { x: 6, y: 28, w: 88, h: null },
+              frame: { x: 6, y: 32, w: 88, h: null },
             }),
             node("CTAButton", {
               props: {
@@ -98,7 +106,7 @@ export function defaultLayoutFor(pageKey: PageKey): LayoutDocument {
                 variant: "primary",
                 width: "full",
               },
-              frame: { x: 6, y: 62, w: 88, h: null },
+              frame: { x: 6, y: 66, w: 88, h: null },
             }),
           ],
         }),
@@ -109,7 +117,7 @@ export function defaultLayoutFor(pageKey: PageKey): LayoutDocument {
         page_key: "menu",
         root: node("PageRoot", {
           id: "root",
-          props: { padding: 0, background: null },
+          props: { padding: 0, backgroundType: "transparent" },
           frame: { x: 0, y: 0, w: 100, h: 100 },
           children: [
             node("MenuBook", {
@@ -126,7 +134,7 @@ export function defaultLayoutFor(pageKey: PageKey): LayoutDocument {
         page_key: "item_detail",
         root: node("PageRoot", {
           id: "root",
-          props: { padding: 0, background: null },
+          props: { padding: 0, backgroundType: "transparent" },
           frame: { x: 0, y: 0, w: 100, h: 100 },
           children: [
             node("ItemDetailShell", {

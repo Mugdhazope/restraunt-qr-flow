@@ -15,6 +15,8 @@ import {
   patchItemDetailOverride,
   type ItemDetailOverride,
 } from "./itemLabelStyles";
+import { resolvePageBackground } from "./pageBackground";
+import { resolveTextStyle } from "./textStyles";
 import { frameStyle, interpolateText, nodeStyle } from "./treeUtils";
 import type { LayoutDataContext, LayoutNode, LayoutRenderMode } from "./types";
 
@@ -71,49 +73,79 @@ function wrap(
 }
 
 export function PageRootRender({ node, mode, data, children, selected, onSelect }: Props) {
-  const bg = (node.props?.background as string | null) || data.theme.background;
+  const resolved = resolvePageBackground(
+    node.props,
+    data.theme.background,
+    data.theme.pageBackground,
+  );
   return wrap(
     node,
     mode,
     selected,
     onSelect,
     {
-      minHeight: mode === "preview" || mode === "editor" ? "100%" : "100dvh",
-      background: bg,
+      // Fill parent (editor phone or live fixed viewport) so % frames match.
+      height: "100%",
+      minHeight: "100%",
+      position: "relative",
+      overflow: "hidden",
       color: data.theme.text,
       boxSizing: "border-box",
     },
-    children,
+    <>
+      <div aria-hidden style={resolved.baseStyle} />
+      {resolved.themeOverlayStyle ? <div aria-hidden style={resolved.themeOverlayStyle} /> : null}
+      {resolved.pageLayerStyle ? <div aria-hidden style={resolved.pageLayerStyle} /> : null}
+      <div style={{ position: "relative", zIndex: 3, minHeight: "100%", height: "100%" }}>{children}</div>
+    </>,
     { isRoot: true },
   );
 }
 
 export function RestaurantNameRender({ node, mode, data, selected, onSelect }: Props) {
-  const align = (node.props?.align as string) || "center";
   const showTagline = Boolean(node.props?.showTagline);
+  const display =
+    typeof node.props?.displayText === "string" && node.props.displayText.trim()
+      ? String(node.props.displayText)
+      : data.restaurantName || data.restaurant?.name || "Restaurant";
+  const tagline = (data.tagline || data.restaurant?.tagline || "").trim();
+  const textStyle = resolveTextStyle(node.props, data.theme, {
+    color: data.theme.text,
+    fontSize: "1.5rem",
+    fontWeight: data.theme.typography.weights.heading,
+    fontFamily: data.theme.typography.fonts.heading,
+    align: (node.props?.align as CSSProperties["textAlign"]) || "center",
+  });
   return wrap(
     node,
     mode,
     selected,
     onSelect,
-    { textAlign: align as CSSProperties["textAlign"] },
+    { textAlign: textStyle.textAlign },
     <>
       <h1
         style={{
-          fontFamily: data.theme.typography.fonts.heading,
-          fontWeight: data.theme.typography.weights.heading,
+          ...textStyle,
           letterSpacing: data.theme.typography.letterSpacing.heading,
-          fontSize: "1.5rem",
-          color: data.theme.text,
+          margin: 0,
         }}
       >
-        {data.restaurantName || data.restaurant?.name || "Restaurant"}
+        {display}
       </h1>
-      {showTagline && (data.tagline || data.restaurant?.tagline) && (
-        <p style={{ color: data.theme.textSecondary, fontSize: 14, marginTop: 4 }}>
-          {data.tagline || data.restaurant?.tagline}
+      {showTagline && tagline ? (
+        <p
+          style={{
+            color: data.theme.textSecondary,
+            fontSize: 14,
+            marginTop: 4,
+            marginBottom: 0,
+            textAlign: textStyle.textAlign,
+            fontFamily: data.theme.typography.fonts.body,
+          }}
+        >
+          {tagline}
         </p>
-      )}
+      ) : null}
     </>,
   );
 }
@@ -121,7 +153,18 @@ export function RestaurantNameRender({ node, mode, data, selected, onSelect }: P
 export function RestaurantLogoRender({ node, mode, data, selected, onSelect }: Props) {
   const size = (node.props?.size as string) || "md";
   const dim = size === "sm" ? 40 : size === "lg" ? 80 : 56;
+  // One logo per outlet — always from scanner_theme / theme.logoUrl (never per-page).
+  const imageUrl =
+    typeof data.theme.logoUrl === "string" && data.theme.logoUrl.trim()
+      ? data.theme.logoUrl.trim()
+      : null;
+  const radius =
+    typeof node.props?.borderRadius === "number" && Number.isFinite(node.props.borderRadius)
+      ? Math.max(0, node.props.borderRadius)
+      : 12;
   const initial = (data.restaurantName || "R").charAt(0).toUpperCase();
+  const fit = node.props?.objectFit === "contain" ? "contain" : "cover";
+
   return wrap(
     node,
     mode,
@@ -132,22 +175,37 @@ export function RestaurantLogoRender({ node, mode, data, selected, onSelect }: P
       justifyContent:
         node.props?.align === "left" ? "flex-start" : node.props?.align === "right" ? "flex-end" : "center",
     },
-    <div
-      style={{
-        width: dim,
-        height: dim,
-        borderRadius: 12,
-        background: data.theme.primary,
-        color: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontWeight: 700,
-        fontSize: dim * 0.4,
-      }}
-    >
-      {initial}
-    </div>,
+    imageUrl ? (
+      <img
+        src={imageUrl}
+        alt={data.restaurantName || "Logo"}
+        style={{
+          width: dim,
+          height: dim,
+          borderRadius: radius,
+          objectFit: fit,
+          display: "block",
+          background: "transparent",
+        }}
+      />
+    ) : (
+      <div
+        style={{
+          width: dim,
+          height: dim,
+          borderRadius: radius,
+          background: data.theme.primary,
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: 700,
+          fontSize: dim * 0.4,
+        }}
+      >
+        {initial}
+      </div>
+    ),
   );
 }
 
@@ -159,20 +217,26 @@ export function TextRender({ node, mode, data, selected, onSelect }: Props) {
     "customer.name": data.customerName,
   });
   const variant = String(node.props?.variant ?? "body");
-  const align = (node.props?.align as string) || "left";
-  const style: CSSProperties = {
-    textAlign: align as CSSProperties["textAlign"],
+  const style = resolveTextStyle(node.props, data.theme, {
     color: variant === "muted" ? data.theme.textSecondary : data.theme.text,
-    fontFamily:
-      variant === "heading" ? data.theme.typography.fonts.heading : data.theme.typography.fonts.body,
     fontSize: variant === "heading" ? "1.5rem" : variant === "muted" ? 14 : 15,
     fontWeight: variant === "heading" ? data.theme.typography.weights.heading : 400,
-  };
+    fontFamily:
+      variant === "heading" ? data.theme.typography.fonts.heading : data.theme.typography.fonts.body,
+    align: (node.props?.align as CSSProperties["textAlign"]) || "left",
+  });
   return wrap(node, mode, selected, onSelect, style, <p style={{ margin: 0 }}>{text}</p>);
 }
 
 export function BannerRender({ node, mode, data, selected, onSelect }: Props) {
   const text = String(node.props?.text ?? "Banner");
+  const textStyle = resolveTextStyle(node.props, data.theme, {
+    color: data.theme.text,
+    fontSize: 14,
+    fontWeight: 400,
+    fontFamily: data.theme.typography.fonts.body,
+    align: (node.props?.align as CSSProperties["textAlign"]) || "center",
+  });
   return wrap(
     node,
     mode,
@@ -180,11 +244,9 @@ export function BannerRender({ node, mode, data, selected, onSelect }: Props) {
     onSelect,
     {
       background: (node.props?.background as string) || data.theme.primaryLight || "#f3f4f6",
-      color: data.theme.text,
       padding: 12,
       borderRadius: 8,
-      textAlign: "center",
-      fontSize: 14,
+      ...textStyle,
     },
     text,
   );
@@ -517,6 +579,13 @@ export function CTAButtonRender({ node, mode, data, selected, onSelect }: Props)
     else if (action === "navigate_menu") data.navigateToMenu?.();
     else if (action === "navigate_back") data.navigateBack?.();
   };
+  const textStyle = resolveTextStyle(node.props, data.theme, {
+    color: primary ? data.theme.background : data.theme.text,
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: data.theme.typography.fonts.ui,
+    align: "center",
+  });
   return wrap(
     node,
     mode,
@@ -533,10 +602,9 @@ export function CTAButtonRender({ node, mode, data, selected, onSelect }: Props)
         borderRadius: 8,
         border: primary ? "none" : `1px solid ${data.theme.text}`,
         background: primary ? data.theme.text : "transparent",
-        color: primary ? data.theme.background : data.theme.text,
-        fontWeight: 600,
-        fontSize: 14,
         cursor: "pointer",
+        ...textStyle,
+        textAlign: "center",
       }}
     >
       {label}
@@ -706,7 +774,7 @@ export function MenuBookRender({ node, mode, data, selected, onSelect }: Props) 
         alignItems: "center",
         justifyContent: "center",
         height: "100%",
-        background: data.theme.background,
+        background: "transparent",
       },
       <p style={{ color: data.theme.textSecondary, fontSize: 14 }}>Menu coming soon</p>,
     );
@@ -724,12 +792,12 @@ export function MenuBookRender({ node, mode, data, selected, onSelect }: Props) 
     {
       height: "100%",
       minHeight: isEditor ? "100%" : "100dvh",
-      background: data.theme.background,
+      background: "transparent",
       display: "flex",
       flexDirection: "column",
       overflow: "hidden",
     },
-    <div className="relative flex flex-col h-full w-full overflow-hidden" style={{ background: data.theme.background }}>
+    <div className="relative flex flex-col h-full w-full overflow-hidden" style={{ background: "transparent" }}>
       <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 pt-5 pb-2">
         {!isEditor ? (
           <button
@@ -857,7 +925,7 @@ export function MenuBookRender({ node, mode, data, selected, onSelect }: Props) 
       <div
         className="absolute bottom-0 left-0 right-0 z-40 pb-6 pt-2"
         style={{
-          background: `linear-gradient(to top, ${data.theme.background}, ${data.theme.background}e8, transparent)`,
+          background: "linear-gradient(to top, rgba(255,255,255,0.35), rgba(255,255,255,0.12), transparent)",
         }}
       >
         <div className="flex items-center justify-center gap-5 px-6">
@@ -932,7 +1000,7 @@ export function ItemDetailShellRender({ node, mode, data, selected, onSelect }: 
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: data.theme.background,
+        background: "transparent",
       },
       <p style={{ color: data.theme.textSecondary, fontSize: 13 }}>Select a menu item to preview</p>,
     );

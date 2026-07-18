@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useRestaurant } from "@/context/RestaurantContext";
 import {
   apiFetch,
@@ -9,25 +10,17 @@ import {
   type ApiRestaurant,
   type MessageTemplate,
   type ScannerThemeOverrides,
-  type ScannerTagStyle,
 } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
-import { DEFAULT_TAG_EMOJIS, type TagEmojiKey } from "@/data/restaurantThemes";
-
-const TAG_ROWS: { key: TagEmojiKey; label: string }[] = [
-  { key: "new", label: "New" },
-  { key: "featured", label: "Featured" },
-  { key: "popular", label: "Popular" },
-  { key: "bestseller", label: "Bestseller" },
-  { key: "chefs_pick", label: "Chef's Pick" },
-  { key: "jain", label: "Jain" },
-];
-
-const emptyTag = (): ScannerTagStyle => ({ bg: "", text: "", emoji: "" });
+import { getTheme } from "@/data/restaurantThemes";
+import { OutletAppearancePanel } from "@/layouts/OutletAppearancePanel";
+import { resolveScanContext } from "@/lib/scanContext";
 
 const Settings = () => {
   const { outlets, selectedOutlet, refreshOutlets } = useRestaurant();
   const slug = selectedOutlet.restaurantId;
+  const { menuKey } = useMemo(() => resolveScanContext(slug), [slug]);
+  const baseTheme = useMemo(() => getTheme(menuKey), [menuKey]);
   const [activeTab, setActiveTab] = useState("outlets");
 
   const [wa, setWa] = useState({
@@ -47,17 +40,8 @@ const Settings = () => {
   });
   const [waLoading, setWaLoading] = useState(false);
 
-  const [appearanceBg, setAppearanceBg] = useState("");
-  const [appearanceTags, setAppearanceTags] = useState<Record<TagEmojiKey, ScannerTagStyle>>({
-    new: emptyTag(),
-    featured: emptyTag(),
-    popular: emptyTag(),
-    bestseller: emptyTag(),
-    chefs_pick: emptyTag(),
-    jain: emptyTag(),
-  });
+  const [appearanceOverrides, setAppearanceOverrides] = useState<ScannerThemeOverrides | null>(null);
   const [appearanceLoading, setAppearanceLoading] = useState(false);
-  const [appearanceSaving, setAppearanceSaving] = useState(false);
 
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [tplLoading, setTplLoading] = useState(false);
@@ -107,39 +91,7 @@ const Settings = () => {
     setAppearanceLoading(true);
     try {
       const r = await apiFetch<ApiRestaurant>(restaurantDetailUrl(slug));
-      const st = r.scanner_theme || {};
-      setAppearanceBg(st.background || "");
-      const tagEmoji = (key: TagEmojiKey) => {
-        const row = st.tags?.[key];
-        if (row && Object.prototype.hasOwnProperty.call(row, "emoji")) {
-          return row.emoji ?? "";
-        }
-        return DEFAULT_TAG_EMOJIS[key];
-      };
-      setAppearanceTags({
-        new: { bg: st.tags?.new?.bg || "", text: st.tags?.new?.text || "", emoji: tagEmoji("new") },
-        featured: {
-          bg: st.tags?.featured?.bg || "",
-          text: st.tags?.featured?.text || "",
-          emoji: tagEmoji("featured"),
-        },
-        popular: {
-          bg: st.tags?.popular?.bg || "",
-          text: st.tags?.popular?.text || "",
-          emoji: tagEmoji("popular"),
-        },
-        bestseller: {
-          bg: st.tags?.bestseller?.bg || "",
-          text: st.tags?.bestseller?.text || "",
-          emoji: tagEmoji("bestseller"),
-        },
-        chefs_pick: {
-          bg: st.tags?.chefs_pick?.bg || "",
-          text: st.tags?.chefs_pick?.text || "",
-          emoji: tagEmoji("chefs_pick"),
-        },
-        jain: { bg: st.tags?.jain?.bg || "", text: st.tags?.jain?.text || "", emoji: tagEmoji("jain") },
-      });
+      setAppearanceOverrides(r.scanner_theme || {});
     } catch {
       toast({ title: "Could not load appearance", variant: "destructive" });
     } finally {
@@ -152,35 +104,6 @@ const Settings = () => {
     if (activeTab === "templates") void loadTemplates();
     if (activeTab === "appearance") void loadAppearance();
   }, [activeTab, loadWhatsapp, loadTemplates, loadAppearance]);
-
-  const saveAppearance = async () => {
-    setAppearanceSaving(true);
-    try {
-      const tags: NonNullable<ScannerThemeOverrides["tags"]> = {};
-      (Object.keys(appearanceTags) as TagEmojiKey[]).forEach((key) => {
-        const row = appearanceTags[key];
-        const entry: ScannerTagStyle = {};
-        if (row.bg?.trim()) entry.bg = row.bg.trim();
-        if (row.text?.trim()) entry.text = row.text.trim();
-        // Always persist emoji ("" clears default and shows no emoji on chips)
-        entry.emoji = (row.emoji ?? "").trim();
-        tags[key] = entry;
-      });
-      const scanner_theme: ScannerThemeOverrides = {};
-      if (appearanceBg.trim()) scanner_theme.background = appearanceBg.trim();
-      if (Object.keys(tags).length) scanner_theme.tags = tags;
-      await apiFetch(restaurantDetailUrl(slug), {
-        method: "PATCH",
-        body: JSON.stringify({ scanner_theme }),
-      });
-      toast({ title: "Appearance saved" });
-      await loadAppearance();
-    } catch (e) {
-      toast({ title: e instanceof Error ? e.message : "Save failed", variant: "destructive" });
-    } finally {
-      setAppearanceSaving(false);
-    }
-  };
 
   const saveWhatsapp = async () => {
     setWaLoading(true);
@@ -527,128 +450,32 @@ const Settings = () => {
         )}
 
         {activeTab === "appearance" && (
-          <div className="bg-card border border-border rounded-xl p-5 space-y-6">
-            {appearanceLoading && <p className="text-xs text-muted-foreground">Loading…</p>}
-            <div>
-              <h2 className="text-sm font-semibold text-foreground mb-1">QR menu background</h2>
-              <p className="text-xs text-muted-foreground mb-3">
-                Overrides the scanner page background. Leave blank to use the brand default.
-              </p>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  aria-label="Background color picker"
-                  value={/^#[0-9a-fA-F]{6}$/.test(appearanceBg) ? appearanceBg : "#f0ebe4"}
-                  onChange={(e) => setAppearanceBg(e.target.value)}
-                  className="h-10 w-12 cursor-pointer rounded border border-border bg-background"
-                />
-                <input
-                  value={appearanceBg}
-                  onChange={(e) => setAppearanceBg(e.target.value)}
-                  placeholder="#f0ebe4"
-                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-sm font-semibold text-foreground mb-1">Tag styles</h2>
-              <p className="text-xs text-muted-foreground mb-3">
-                Customize chip background, text color, and emoji. Clear emoji to show text only (no icon).
-              </p>
-              <div className="space-y-3">
-                {TAG_ROWS.map(({ key, label }) => (
-                  <div
-                    key={key}
-                    className="grid grid-cols-1 sm:grid-cols-[7rem_1fr] gap-2 sm:gap-3 items-start border border-border rounded-lg p-3"
-                  >
-                    <div className="flex items-center gap-2 pt-2">
-                      <span
-                        className="inline-flex items-center text-[10px] uppercase tracking-wider px-2 py-1 rounded-full font-semibold"
-                        style={{
-                          background: appearanceTags[key].bg || "#e5e7eb",
-                          color: appearanceTags[key].text || "#111827",
-                        }}
-                      >
-                        {(appearanceTags[key].emoji || "").trim()
-                          ? `${appearanceTags[key].emoji!.trim()} ${label}`
-                          : label}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">Bg</label>
-                        <div className="flex gap-1">
-                          <input
-                            type="color"
-                            aria-label={`${label} background`}
-                            value={/^#[0-9a-fA-F]{6}$/.test(appearanceTags[key].bg || "") ? appearanceTags[key].bg! : "#10b981"}
-                            onChange={(e) =>
-                              setAppearanceTags((t) => ({ ...t, [key]: { ...t[key], bg: e.target.value } }))
-                            }
-                            className="h-9 w-9 shrink-0 cursor-pointer rounded border border-border"
-                          />
-                          <input
-                            value={appearanceTags[key].bg || ""}
-                            onChange={(e) =>
-                              setAppearanceTags((t) => ({ ...t, [key]: { ...t[key], bg: e.target.value } }))
-                            }
-                            placeholder="#hex"
-                            className="w-full min-w-0 bg-background border border-border rounded-md px-2 py-1.5 text-xs font-mono"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">Text</label>
-                        <div className="flex gap-1">
-                          <input
-                            type="color"
-                            aria-label={`${label} text`}
-                            value={/^#[0-9a-fA-F]{6}$/.test(appearanceTags[key].text || "") ? appearanceTags[key].text! : "#ffffff"}
-                            onChange={(e) =>
-                              setAppearanceTags((t) => ({ ...t, [key]: { ...t[key], text: e.target.value } }))
-                            }
-                            className="h-9 w-9 shrink-0 cursor-pointer rounded border border-border"
-                          />
-                          <input
-                            value={appearanceTags[key].text || ""}
-                            onChange={(e) =>
-                              setAppearanceTags((t) => ({ ...t, [key]: { ...t[key], text: e.target.value } }))
-                            }
-                            placeholder="#hex"
-                            className="w-full min-w-0 bg-background border border-border rounded-md px-2 py-1.5 text-xs font-mono"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">Emoji</label>
-                        <input
-                          value={appearanceTags[key].emoji || ""}
-                          onChange={(e) =>
-                            setAppearanceTags((t) => ({ ...t, [key]: { ...t[key], emoji: e.target.value } }))
-                          }
-                          placeholder="(none)"
-                          maxLength={8}
-                          className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              disabled={appearanceLoading || appearanceSaving}
-              onClick={() => void saveAppearance()}
-              className="bg-foreground text-background px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
-            >
-              {appearanceSaving ? "Saving…" : "Save appearance"}
-            </button>
-            <p className="text-xs text-muted-foreground">
-              Changes apply on the next QR menu load for this outlet.
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            {appearanceLoading && (
+              <p className="text-xs text-muted-foreground p-5">Loading…</p>
+            )}
+            <p className="text-xs text-muted-foreground px-5 pt-4">
+              Same controls live in{" "}
+              <Link to="/dashboard/layout" className="text-primary underline underline-offset-2">
+                Layout Editor → Outlet appearance
+              </Link>{" "}
+              with live phone preview.
             </p>
+            {!appearanceLoading && (
+              <OutletAppearancePanel
+                restaurantSlug={slug}
+                themeBackground={baseTheme.background}
+                defaults={{
+                  text: baseTheme.text,
+                  textSecondary: baseTheme.textSecondary,
+                  primary: baseTheme.primary,
+                  pageTitle: baseTheme.pageTitle ?? baseTheme.primary,
+                  tagline: baseTheme.tagline,
+                }}
+                overrides={appearanceOverrides}
+                onChange={setAppearanceOverrides}
+              />
+            )}
           </div>
         )}
 
