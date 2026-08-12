@@ -6,7 +6,16 @@ export function isPreviewOnlyBuild(): boolean {
   return import.meta.env.VITE_PREVIEW_ONLY === "true";
 }
 
+/** Real staff login must never use demo mocks or a fake session. */
+export function isStaffLoginPath(pathname?: string): boolean {
+  const path =
+    pathname ?? (typeof window !== "undefined" ? window.location.pathname : "");
+  return path === "/dashboard/login" || path.startsWith("/dashboard/login/");
+}
+
 export function isPreviewMode(): boolean {
+  // Keep privacy strong: login always talks to the live API / username screen.
+  if (isStaffLoginPath()) return false;
   if (isPreviewOnlyBuild()) return true;
   if (typeof window === "undefined") return false;
   return window.location.pathname.startsWith(PREVIEW_HUB_PATH);
@@ -32,12 +41,14 @@ export function buildScanPath(slug: string, ...parts: string[]): string {
   return segs.join("/");
 }
 
-/** Login URL for the live CRM, or null when this build has no live backend. */
-export function liveAppLoginUrl(): string | null {
+/**
+ * Always points at the staff username/password screen.
+ * Prefer the live CRM origin when this image is a standalone preview container.
+ */
+export function liveAppLoginUrl(): string {
   const origin = String(import.meta.env.VITE_LIVE_APP_ORIGIN || "")
     .trim()
     .replace(/\/+$/, "");
   if (origin) return `${origin}/dashboard/login`;
-  if (isPreviewOnlyBuild()) return null;
   return "/dashboard/login";
 }

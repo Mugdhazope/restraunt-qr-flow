@@ -17,7 +17,12 @@ import {
   type ApiStaffUser,
 } from "@/lib/api";
 import { PREVIEW_STAFF_USER } from "@/lib/previewFixtures";
-import { PREVIEW_HUB_PATH, isPreviewMode, isPreviewOnlyBuild } from "@/lib/previewMode";
+import {
+  PREVIEW_HUB_PATH,
+  isPreviewMode,
+  isPreviewOnlyBuild,
+  isStaffLoginPath,
+} from "@/lib/previewMode";
 import { useLocation } from "react-router-dom";
 
 type AuthContextType = {
@@ -34,7 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<ApiStaffUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
-  const preview = isPreviewOnlyBuild() || location.pathname.startsWith(PREVIEW_HUB_PATH);
+  // Never inject the demo user on the real username/password screen.
+  const preview =
+    !isStaffLoginPath(location.pathname) &&
+    (isPreviewOnlyBuild() || location.pathname.startsWith(PREVIEW_HUB_PATH));
 
   const restoreSession = useCallback(async () => {
     if (!getStaffToken()) {

@@ -33,6 +33,7 @@ import {
   PREVIEW_SCAN_BASE,
   buildScanPath,
   isPreviewOnlyBuild,
+  isStaffLoginPath,
 } from "@/lib/previewMode";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,10 @@ function ScanToMenuRedirect() {
 
 function RedirectPrefix({ from, to }: { from: string; to: string }) {
   const location = useLocation();
+  // Never swallow the real username/password screen.
+  if (isStaffLoginPath(location.pathname)) {
+    return <Navigate to="/dashboard/login" replace />;
+  }
   const rest = location.pathname.startsWith(from) ? location.pathname.slice(from.length) : "";
   return <Navigate to={`${to}${rest}${location.search}${location.hash}`} replace />;
 }
@@ -115,9 +120,11 @@ const App = () => (
                   {scanChildRoutes()}
                 </Route>
 
+                {/* Always available — username/password screen for real staff accounts */}
+                <Route path="/dashboard/login" element={<Login />} />
+
                 {previewOnly ? (
                   <>
-                    <Route path="/dashboard/login" element={<Navigate to={PREVIEW_HUB_PATH} replace />} />
                     <Route
                       path="/dashboard/*"
                       element={<RedirectPrefix from="/dashboard" to={PREVIEW_DASHBOARD_BASE} />}
@@ -133,7 +140,6 @@ const App = () => (
                     <Route path="/scan" element={<Outlet />}>
                       {scanChildRoutes()}
                     </Route>
-                    <Route path="/dashboard/login" element={<Login />} />
                     <Route
                       path="/dashboard"
                       element={

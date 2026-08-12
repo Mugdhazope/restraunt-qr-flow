@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isPreviewOnlyBuild, PREVIEW_HUB_PATH } from "@/lib/previewMode";
 
 export default function Login() {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -17,10 +16,6 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   const nextPath = searchParams.get("next") || "/dashboard";
-
-  if (isPreviewOnlyBuild()) {
-    return <Navigate to={PREVIEW_HUB_PATH} replace />;
-  }
 
   if (!isLoading && isAuthenticated) {
     return <Navigate to={nextPath.startsWith("/dashboard") ? nextPath : "/dashboard"} replace />;
@@ -44,8 +39,11 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">WhatsApp CRM</CardTitle>
-          <CardDescription>Sign in with your staff account to access the dashboard.</CardDescription>
+          <CardTitle className="text-2xl">Digital Menu</CardTitle>
+          <CardDescription>
+            Sign in with your staff username and password. Your account data stays private — preview
+            demo data is never mixed with live restaurants.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

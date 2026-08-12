@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Smartphone, BarChart3 } from "lucide-react";
 import { DEFAULT_RESTAURANT_SLUG } from "@/lib/defaultRestaurantSlug";
 import { PREVIEW_DASHBOARD_BASE, PREVIEW_SCAN_BASE, liveAppLoginUrl } from "@/lib/previewMode";
@@ -7,6 +7,7 @@ import PreviewBanner from "@/components/PreviewBanner";
 const PreviewHub = () => {
   const navigate = useNavigate();
   const loginHref = liveAppLoginUrl();
+  const isExternal = /^https?:\/\//i.test(loginHref);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -19,7 +20,7 @@ const PreviewHub = () => {
             </h1>
             <p className="text-muted-foreground mt-2">Interactive product preview</p>
             <p className="text-muted-foreground text-sm mt-1">
-              Sample data only · No login required · Changes are not saved
+              Sample data only · No login required · No real customer or company data
             </p>
           </div>
 
@@ -59,14 +60,18 @@ const PreviewHub = () => {
             </button>
           </div>
 
-          {loginHref ? (
-            <p className="text-muted-foreground text-xs">
-              Already have an account?{" "}
+          <p className="text-muted-foreground text-xs">
+            Already have an account?{" "}
+            {isExternal ? (
               <a href={loginHref} className="text-primary hover:underline">
                 Sign in
               </a>
-            </p>
-          ) : null}
+            ) : (
+              <Link to={loginHref} className="text-primary hover:underline">
+                Sign in
+              </Link>
+            )}
+          </p>
         </div>
       </div>
     </div>
