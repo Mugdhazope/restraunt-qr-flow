@@ -5,6 +5,7 @@ import { getTheme, applyScannerTheme, type RestaurantTheme } from "@/data/restau
 import { fetchPublicMenu, type ScannerThemeOverrides } from "@/lib/api";
 import { mergePublicMenu } from "@/lib/publicMenu";
 import { resolveScanContext } from "@/lib/scanContext";
+import { buildScanPath } from "@/lib/previewMode";
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { categoryImages } from "@/components/menu/menuImages";
@@ -224,7 +225,7 @@ const MobileMenu = ({
       <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 pt-5 pb-2">
         <button
           type="button"
-          onClick={() => navigate(`/scan/${resolvedId}`)}
+          onClick={() => navigate(buildScanPath(resolvedId))}
           className="w-10 h-10 rounded-full bg-white/60 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
           style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}
           aria-label="Back"

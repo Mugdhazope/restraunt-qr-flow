@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isPreviewOnlyBuild, PREVIEW_HUB_PATH } from "@/lib/previewMode";
 
 export default function Login() {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -16,6 +17,10 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   const nextPath = searchParams.get("next") || "/dashboard";
+
+  if (isPreviewOnlyBuild()) {
+    return <Navigate to={PREVIEW_HUB_PATH} replace />;
+  }
 
   if (!isLoading && isAuthenticated) {
     return <Navigate to={nextPath.startsWith("/dashboard") ? nextPath : "/dashboard"} replace />;

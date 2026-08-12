@@ -3,28 +3,18 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useRestaurant } from "@/context/RestaurantContext";
 import { useAuth, userInitials } from "@/context/AuthContext";
 import { getTheme } from "@/data/restaurantThemes";
+import PreviewBanner from "@/components/PreviewBanner";
+import {
+  dashboardBasePath,
+  dashboardPath,
+  isPreviewMode,
+  PREVIEW_HUB_PATH,
+} from "@/lib/previewMode";
 import {
   LayoutDashboard, Users, MessageSquare, Star,
   QrCode, BarChart3, Settings, Search, Bell, ChevronDown,
   Menu, X, LogOut, UtensilsCrossed, Upload, Store, LayoutTemplate
 } from "lucide-react";
-// WA_DISABLED: Megaphone, Zap — re-import when Campaigns/Automations nav returns
-
-const navItems = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { label: "Customers", path: "/dashboard/customers", icon: Users },
-  { label: "Import Customers", path: "/dashboard/import-customers", icon: Upload },
-  { label: "Menu", path: "/dashboard/menu", icon: UtensilsCrossed },
-  { label: "Layout Editor", path: "/dashboard/layout", icon: LayoutTemplate },
-  { label: "Feedback", path: "/dashboard/feedback", icon: MessageSquare },
-  { label: "Google Reviews", path: "/dashboard/google-reviews", icon: Star },
-  // WA_DISABLED — re-enable with WhatsApp
-  // { label: "WhatsApp Campaigns", path: "/dashboard/campaigns", icon: Megaphone },
-  // { label: "Automations", path: "/dashboard/automations", icon: Zap },
-  { label: "QR & Entry Flow", path: "/dashboard/qr-entry", icon: QrCode },
-  { label: "Analytics", path: "/dashboard/analytics", icon: BarChart3 },
-  { label: "Settings", path: "/dashboard/settings", icon: Settings },
-];
 
 const DashboardLayout = () => {
   const location = useLocation();
@@ -37,21 +27,38 @@ const DashboardLayout = () => {
   const initials = userInitials(user);
   const displayName = user?.name?.trim() || user?.username || "Staff";
   const displayHandle = user?.username ? `@${user.username}` : "";
+  const base = dashboardBasePath();
+  const preview = isPreviewMode();
+
+  const navItems = [
+    { label: "Dashboard", path: base, icon: LayoutDashboard },
+    { label: "Customers", path: dashboardPath("customers"), icon: Users },
+    { label: "Import Customers", path: dashboardPath("import-customers"), icon: Upload },
+    { label: "Menu", path: dashboardPath("menu"), icon: UtensilsCrossed },
+    { label: "Layout Editor", path: dashboardPath("layout"), icon: LayoutTemplate },
+    { label: "Feedback", path: dashboardPath("feedback"), icon: MessageSquare },
+    { label: "Google Reviews", path: dashboardPath("google-reviews"), icon: Star },
+    { label: "QR & Entry Flow", path: dashboardPath("qr-entry"), icon: QrCode },
+    { label: "Analytics", path: dashboardPath("analytics"), icon: BarChart3 },
+    { label: "Settings", path: dashboardPath("settings"), icon: Settings },
+  ];
 
   async function handleLogout() {
     await logout();
-    navigate("/dashboard/login", { replace: true });
+    navigate(preview ? PREVIEW_HUB_PATH : "/dashboard/login", { replace: true });
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-foreground/20 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+    <div className="min-h-screen bg-background flex flex-col">
+      <PreviewBanner />
+      <div className="flex flex-1 min-h-0">
+        {sidebarOpen && (
+          <div className="fixed inset-0 bg-foreground/20 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
 
       <aside className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-sidebar z-50 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="px-6 h-16 flex items-center justify-between border-b border-sidebar-border">
-          <Link to="/dashboard" className="text-sidebar-foreground font-bold text-lg tracking-tight">
+          <Link to={base} className="text-sidebar-foreground font-bold text-lg tracking-tight">
             Digital Menu
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-muted hover:text-sidebar-foreground">
@@ -179,13 +186,14 @@ const DashboardLayout = () => {
 
         <main
           className={`flex-1 w-full mx-auto ${
-            location.pathname.startsWith("/dashboard/layout")
+            location.pathname.startsWith(`${base}/layout`)
               ? "p-0 max-w-none min-h-0 overflow-hidden"
               : "p-4 lg:p-6 max-w-[1400px]"
           }`}
         >
           <Outlet />
         </main>
+      </div>
       </div>
     </div>
   );

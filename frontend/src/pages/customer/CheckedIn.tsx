@@ -4,6 +4,7 @@ import { useCustomer } from "@/context/CustomerContext";
 import confetti from "canvas-confetti";
 import { restaurants } from "@/data/menuData";
 import { resolveScanContext } from "@/lib/scanContext";
+import { buildScanPath } from "@/lib/previewMode";
 import { useScannerTheme } from "@/lib/useScannerTheme";
 import { LayoutRenderer } from "@/layouts/LayoutRenderer";
 import { themeWithOutletLogo } from "@/layouts/outletLogo";
@@ -62,7 +63,7 @@ const CheckedIn = () => {
     customerName: customer?.name,
     visitCount,
     visitGoal: VISIT_GOAL,
-    navigateToMenu: () => navigate(`/scan/${pathSegment}/menu`),
+    navigateToMenu: () => navigate(buildScanPath(pathSegment, "menu")),
   };
 
   if (layoutsLoading) {

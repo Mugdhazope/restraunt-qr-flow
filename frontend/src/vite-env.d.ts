@@ -9,6 +9,13 @@ interface ImportMetaEnv {
    * Set at build time for production so QRs never encode localhost.
    */
   readonly VITE_PUBLIC_APP_ORIGIN?: string;
+  /**
+   * When "true", the SPA is a standalone demo: every route uses dummy data
+   * and never calls the Django API. Deploy this image without postgres/django.
+   */
+  readonly VITE_PREVIEW_ONLY?: string;
+  /** Absolute origin of the live CRM (no trailing slash) for “Sign in” from preview. */
+  readonly VITE_LIVE_APP_ORIGIN?: string;
 }
 
 interface ImportMeta {

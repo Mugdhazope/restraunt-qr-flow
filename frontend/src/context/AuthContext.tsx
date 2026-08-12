@@ -16,6 +16,9 @@ import {
   setStaffToken,
   type ApiStaffUser,
 } from "@/lib/api";
+import { PREVIEW_STAFF_USER } from "@/lib/previewFixtures";
+import { PREVIEW_HUB_PATH, isPreviewMode, isPreviewOnlyBuild } from "@/lib/previewMode";
+import { useLocation } from "react-router-dom";
 
 type AuthContextType = {
   user: ApiStaffUser | null;
@@ -30,6 +33,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<ApiStaffUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+  const preview = isPreviewOnlyBuild() || location.pathname.startsWith(PREVIEW_HUB_PATH);
 
   const restoreSession = useCallback(async () => {
     if (!getStaffToken()) {
@@ -51,12 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (preview) {
+      setUser(PREVIEW_STAFF_USER);
+      setIsLoading(false);
+      return;
+    }
     void (async () => {
       setIsLoading(true);
       await restoreSession();
       setIsLoading(false);
     })();
-  }, [restoreSession]);
+  }, [preview, restoreSession]);
 
   const login = useCallback(async (username: string, password: string) => {
     const { token } = await loginWithCredentials(username, password);
@@ -71,6 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    if (isPreviewMode()) {
+      setUser(PREVIEW_STAFF_USER);
+      return;
+    }
     await logoutStaff();
     clearStaffToken();
     setUser(null);

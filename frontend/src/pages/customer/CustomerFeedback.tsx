@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useCustomer } from "@/context/CustomerContext";
 import { restaurants } from "@/data/menuData";
 import { resolveScanContext } from "@/lib/scanContext";
+import { buildScanPath } from "@/lib/previewMode";
 import { useScannerTheme } from "@/lib/useScannerTheme";
 
 const options = [
@@ -34,9 +35,9 @@ const CustomerFeedback = () => {
     setSubmitted(true);
     setTimeout(() => {
       if (selected === "loved") {
-        navigate(`/scan/${pathSegment}/review`);
+        navigate(buildScanPath(pathSegment, "review"));
       } else {
-        navigate(`/scan/${pathSegment}/checked-in`);
+        navigate(buildScanPath(pathSegment, "checked-in"));
       }
     }, 1500);
   };

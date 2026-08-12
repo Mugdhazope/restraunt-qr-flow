@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { getTheme } from "@/data/restaurantThemes";
+import { dashboardPath } from "@/lib/previewMode";
 import { OutletAppearancePanel } from "@/layouts/OutletAppearancePanel";
 import { resolveScanContext } from "@/lib/scanContext";
 
@@ -456,7 +457,7 @@ const Settings = () => {
             )}
             <p className="text-xs text-muted-foreground px-5 pt-4">
               Same controls live in{" "}
-              <Link to="/dashboard/layout" className="text-primary underline underline-offset-2">
+              <Link to={dashboardPath("layout")} className="text-primary underline underline-offset-2">
                 Layout Editor → Outlet appearance
               </Link>{" "}
               with live phone preview.

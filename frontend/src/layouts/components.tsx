@@ -19,6 +19,7 @@ import { resolvePageBackground } from "./pageBackground";
 import { resolveTextStyle } from "./textStyles";
 import { frameStyle, interpolateText, nodeStyle } from "./treeUtils";
 import type { LayoutDataContext, LayoutNode, LayoutRenderMode } from "./types";
+import { buildScanPath } from "@/lib/previewMode";
 
 type Props = {
   node: LayoutNode;
@@ -802,7 +803,7 @@ export function MenuBookRender({ node, mode, data, selected, onSelect }: Props) 
         {!isEditor ? (
           <button
             type="button"
-            onClick={() => navigate(`/scan/${resolvedId}`)}
+            onClick={() => navigate(buildScanPath(resolvedId))}
             className="w-10 h-10 rounded-full bg-white/60 backdrop-blur-md flex items-center justify-center"
             aria-label="Back"
           >

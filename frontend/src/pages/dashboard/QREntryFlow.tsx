@@ -125,7 +125,7 @@ const QREntryFlow = () => {
           {[
             { step: "1", title: "Scan QR", desc: "Customer scans QR at table" },
             { step: "2", title: "Menu opens", desc: "Browse categories, prices, and photos" },
-            { step: "3", title: "Optional check-in", desc: "Name & phone at /scan/… for visit tracking" },
+            { step: "3", title: "Optional check-in", desc: "Name & phone on the welcome screen for visit tracking" },
           ].map((s) => (
             <div key={s.step} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
               <div className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center text-xs font-bold flex-shrink-0">

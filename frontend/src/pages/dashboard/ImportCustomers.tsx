@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, X, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { isPreviewMode } from "@/lib/previewMode";
 
 interface ParsedRow {
   name: string;
@@ -144,6 +145,18 @@ const ImportCustomers = () => {
 
   const downloadSample = useCallback(
     async (kind: "csv" | "xlsx") => {
+      if (isPreviewMode()) {
+        const csv = "Name,Phone,Tag\nPriya Nair,+919876543210,first_time\nArjun Patel,+918765432109,frequent\n";
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "customer-import-sample.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({ title: "Sample downloaded", description: "Preview uses a local CSV sample." });
+        return;
+      }
       const path = kind === "csv" ? customersImportSampleCsvUrl(slug) : customersImportSampleXlsxUrl(slug);
       const headers = new Headers();
       const tok = getStaffToken();

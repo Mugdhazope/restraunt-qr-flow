@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { isPreviewMode } from "@/lib/previewMode";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -11,6 +12,10 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         <p className="text-muted-foreground text-sm">Loading…</p>
       </div>
     );
+  }
+
+  if (isPreviewMode()) {
+    return <>{children}</>;
   }
 
   if (!isAuthenticated) {

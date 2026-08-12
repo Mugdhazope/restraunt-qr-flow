@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { outlets as fallbackOutlets } from "@/data/mockData";
 import { fetchRestaurants, type ApiRestaurant } from "@/lib/api";
+import { PREVIEW_HUB_PATH, isPreviewOnlyBuild } from "@/lib/previewMode";
 
 export type DashboardOutlet = {
   id: number;
@@ -41,6 +43,8 @@ export const RestaurantProvider = ({ children }: { children: ReactNode }) => {
   const [outletsLoading, setOutletsLoading] = useState(true);
   const [outletsFromApi, setOutletsFromApi] = useState(false);
   const [selectedOutlet, setSelectedOutlet] = useState<DashboardOutlet>(initialOutlet);
+  const location = useLocation();
+  const preview = isPreviewOnlyBuild() || location.pathname.startsWith(PREVIEW_HUB_PATH);
 
   const refreshOutlets = useCallback(async () => {
     setOutletsLoading(true);
@@ -74,7 +78,7 @@ export const RestaurantProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     void refreshOutlets();
-  }, [refreshOutlets]);
+  }, [refreshOutlets, preview]);
 
   return (
     <RestaurantContext.Provider

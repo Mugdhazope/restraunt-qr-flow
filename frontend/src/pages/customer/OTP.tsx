@@ -4,6 +4,7 @@ import { useCustomer } from "@/context/CustomerContext";
 import { postResendOtp, postVerifyOtp, setCustomerScanSession, type OtpDeliveryChannel } from "@/lib/api";
 import { toIndiaE164 } from "@/lib/phoneE164";
 import { resolveScanContext } from "@/lib/scanContext";
+import { buildScanPath } from "@/lib/previewMode";
 import { useScannerTheme } from "@/lib/useScannerTheme";
 
 const SIMULATED_OTP = "482916";
@@ -99,7 +100,7 @@ const OTP = () => {
       const updated = { ...customer, totalVisits: nextVisits, visitTimestamp: new Date().toISOString() };
       setCustomer(updated);
       addCheckin(updated);
-      setTimeout(() => navigate(`/scan/${pathSegment}/checked-in`), 1200);
+      setTimeout(() => navigate(buildScanPath(pathSegment, "checked-in")), 1200);
       return;
     }
 
@@ -123,7 +124,7 @@ const OTP = () => {
         };
         setCustomer(updated);
         addCheckin(updated);
-        navigate(`/scan/${pathSegment}/checked-in`);
+        navigate(buildScanPath(pathSegment, "checked-in"));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Verification failed");

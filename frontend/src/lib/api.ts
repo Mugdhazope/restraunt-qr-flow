@@ -3,6 +3,9 @@
  * (stored in localStorage `kotak_api_token`) or VITE_API_TOKEN for dev scripts.
  * CSRF cookie is HTTP-only; mutating requests fetch a token from GET /api/csrf/.
  */
+import { handlePreviewApi } from "@/lib/previewApi";
+import { isPreviewMode } from "@/lib/previewMode";
+
 const TOKEN_KEY = "kotak_api_token";
 
 function staffToken(): string | undefined {
@@ -18,6 +21,7 @@ export function clearStaffToken(): void {
 }
 
 function handleAuthFailure(): void {
+  if (isPreviewMode()) return;
   clearStaffToken();
   const path = window.location.pathname;
   if (path.startsWith("/dashboard") && path !== "/dashboard/login") {
@@ -38,6 +42,7 @@ function readCookie(name: string): string | null {
 
 /** CSRF cookie is HTTP-only; fetch token from API (no cache — must match current session). */
 async function resolveCsrfToken(): Promise<string | undefined> {
+  if (isPreviewMode()) return "preview";
   const fromCookie = readCookie("csrftoken");
   if (fromCookie) return fromCookie;
   try {
@@ -68,6 +73,9 @@ function nextPath(next: string | null): string | null {
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (isPreviewMode()) {
+    return handlePreviewApi(path, init) as T;
+  }
   const headers = new Headers(init.headers);
   const tok = staffToken();
   if (tok) headers.set("Authorization", `Token ${tok}`);
@@ -148,6 +156,9 @@ export type ApiStaffUser = {
 };
 
 export async function loginWithCredentials(username: string, password: string): Promise<{ token: string }> {
+  if (isPreviewMode()) {
+    return { token: "preview-token" };
+  }
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   // Prefer CSRF when cookie/session already exist (admin visit, etc.).
   const csrf = (await resolveCsrfToken()) ?? readCookie("csrftoken");
@@ -487,6 +498,9 @@ export type PublicLayoutsResponse = {
 };
 
 export async function fetchPublicLayouts(slug: string): Promise<PublicLayoutsResponse> {
+  if (isPreviewMode()) {
+    return handlePreviewApi(publicLayoutsUrl(slug)) as PublicLayoutsResponse;
+  }
   const res = await fetch(publicLayoutsUrl(slug), { credentials: "include" });
   if (res.status === 404) {
     throw new Error("Restaurant not found");
@@ -559,6 +573,9 @@ export async function fetchRestaurants(): Promise<ApiRestaurant[]> {
 }
 
 export async function fetchPublicMenu(slug: string): Promise<PublicMenuResponse> {
+  if (isPreviewMode()) {
+    return handlePreviewApi(publicMenuUrl(slug)) as PublicMenuResponse;
+  }
   const res = await fetch(publicMenuUrl(slug), { credentials: "include" });
   const text = await res.text();
   if (!res.ok) {
@@ -642,6 +659,12 @@ function formatPublicApiError(data: unknown, fallback: string): string {
 }
 
 export async function publicApiPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  if (isPreviewMode()) {
+    return handlePreviewApi(path, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }) as T;
+  }
   const headers = new Headers({ "Content-Type": "application/json" });
   const csrf = (await resolveCsrfToken()) ?? readCookie("csrftoken");
   if (csrf) headers.set("X-CSRFToken", csrf);

@@ -9,6 +9,7 @@ import { ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { lightTap } from "@/lib/haptics";
+import { buildScanPath } from "@/lib/previewMode";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -93,7 +94,7 @@ const MenuDesktop = ({ restaurant, resolvedId, theme }: MenuDesktopProps) => {
     >
       {/* NAV */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 backdrop-blur-2xl" style={{ background: `${theme.background}b3` }}>
-        <button onClick={() => navigate(`/scan/${resolvedId}`)} className="flex items-center gap-2 transition-colors" style={{ color: theme.textSecondary }}>
+        <button onClick={() => navigate(buildScanPath(resolvedId))} className="flex items-center gap-2 transition-colors" style={{ color: theme.textSecondary }}>
           <ArrowLeft size={18} />
           <span
             className="text-xs tracking-[0.15em] uppercase font-bold"

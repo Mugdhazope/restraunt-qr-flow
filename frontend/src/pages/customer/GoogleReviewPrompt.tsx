@@ -5,6 +5,7 @@ import { useCustomer } from "@/context/CustomerContext";
 import { toast } from "@/hooks/use-toast";
 import { fetchPublicMenu } from "@/lib/api";
 import { resolveScanContext } from "@/lib/scanContext";
+import { buildScanPath } from "@/lib/previewMode";
 import { useScannerTheme } from "@/lib/useScannerTheme";
 
 const GoogleReviewPrompt = () => {
@@ -90,7 +91,7 @@ const GoogleReviewPrompt = () => {
           </button>
           <button
             type="button"
-            onClick={() => navigate(`/scan/${pathSegment}/checked-in`)}
+            onClick={() => navigate(buildScanPath(pathSegment, "checked-in"))}
             className="w-full text-muted-foreground text-sm hover:text-foreground transition-colors py-2"
           >
             Maybe later
