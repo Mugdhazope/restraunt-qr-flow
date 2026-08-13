@@ -13,7 +13,7 @@ import {
 } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { getTheme } from "@/data/restaurantThemes";
-import { dashboardPath } from "@/lib/previewMode";
+import { dashboardPath, isPreviewMode } from "@/lib/previewMode";
 import { OutletAppearancePanel } from "@/layouts/OutletAppearancePanel";
 import { resolveScanContext } from "@/lib/scanContext";
 
@@ -175,9 +175,12 @@ const Settings = () => {
   const tabs = [
     { id: "outlets", label: "Outlets" },
     { id: "appearance", label: "Appearance" },
-    // WA_DISABLED — re-enable WhatsApp / SMS / OTP settings with messaging
-    // { id: "whatsapp", label: "WhatsApp Integration" },
-    // { id: "templates", label: "Message Templates" },
+    ...(isPreviewMode()
+      ? [
+          { id: "whatsapp", label: "WhatsApp Integration" },
+          { id: "templates", label: "Message Templates" },
+        ]
+      : []),
     { id: "google", label: "Google Review Link" },
   ];
 
@@ -500,9 +503,11 @@ const Settings = () => {
             >
               Save Changes
             </button>
-            <p className="text-xs text-muted-foreground">
-              WhatsApp / SMS / OTP settings are temporarily disabled for QR-menu-only mode.
-            </p>
+            {!isPreviewMode() && (
+              <p className="text-xs text-muted-foreground">
+                WhatsApp / SMS / OTP settings are temporarily disabled for QR-menu-only mode.
+              </p>
+            )}
           </div>
         )}
 

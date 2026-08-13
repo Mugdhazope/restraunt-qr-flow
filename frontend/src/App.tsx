@@ -11,6 +11,9 @@ import NotFound from "./pages/NotFound";
 import Welcome from "./pages/customer/Welcome";
 import CheckedIn from "./pages/customer/CheckedIn";
 import Menu from "./pages/customer/Menu";
+import OTP from "./pages/customer/OTP";
+import CustomerFeedback from "./pages/customer/CustomerFeedback";
+import GoogleReviewPrompt from "./pages/customer/GoogleReviewPrompt";
 import DashboardLayout from "./components/DashboardLayout";
 import Login from "./pages/dashboard/Login";
 import DashboardHome from "./pages/dashboard/Home";
@@ -77,15 +80,24 @@ function dashboardChildRoutes() {
   );
 }
 
-function scanChildRoutes() {
+function scanChildRoutes({ withWhatsAppFlow = false }: { withWhatsAppFlow?: boolean } = {}) {
   return (
     <>
       <Route path=":restaurantId" element={<Welcome />} />
-      <Route path=":restaurantId/otp" element={<ScanOtpLegacyRedirect />} />
+      <Route
+        path=":restaurantId/otp"
+        element={withWhatsAppFlow ? <OTP /> : <ScanOtpLegacyRedirect />}
+      />
       <Route path=":restaurantId/checked-in" element={<CheckedIn />} />
       <Route path=":restaurantId/menu" element={<Menu />} />
-      <Route path=":restaurantId/feedback" element={<ScanToMenuRedirect />} />
-      <Route path=":restaurantId/review" element={<ScanToMenuRedirect />} />
+      <Route
+        path=":restaurantId/feedback"
+        element={withWhatsAppFlow ? <CustomerFeedback /> : <ScanToMenuRedirect />}
+      />
+      <Route
+        path=":restaurantId/review"
+        element={withWhatsAppFlow ? <GoogleReviewPrompt /> : <ScanToMenuRedirect />}
+      />
     </>
   );
 }
@@ -117,7 +129,7 @@ const App = () => (
                   {dashboardChildRoutes()}
                 </Route>
                 <Route path={PREVIEW_SCAN_BASE} element={<Outlet />}>
-                  {scanChildRoutes()}
+                  {scanChildRoutes({ withWhatsAppFlow: true })}
                 </Route>
 
                 {/* Always available — username/password screen for real staff accounts */}
@@ -138,7 +150,7 @@ const App = () => (
                 ) : (
                   <>
                     <Route path="/scan" element={<Outlet />}>
-                      {scanChildRoutes()}
+                      {scanChildRoutes({ withWhatsAppFlow: false })}
                     </Route>
                     <Route
                       path="/dashboard"

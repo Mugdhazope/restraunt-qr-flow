@@ -52,18 +52,18 @@ const TAG_MAP: Record<string, string> = {
 
 function emptyRestaurantFields() {
   return {
-    whatsapp_number: "",
+    whatsapp_number: "+91 98765 00000",
     whatsapp_api_token: "",
-    whatsapp_phone_number_id: "",
-    whatsapp_broadcast_template_name: "",
+    whatsapp_phone_number_id: "preview-phone-number-id",
+    whatsapp_broadcast_template_name: "restaurant_promo",
     whatsapp_broadcast_template_language: "en",
-    whatsapp_otp_template_name: "",
+    whatsapp_otp_template_name: "login_otp",
     whatsapp_otp_template_language: "en",
-    whatsapp_feedback_template_name: "",
+    whatsapp_feedback_template_name: "feedback_request",
     whatsapp_feedback_template_language: "en",
     sms_api_key: "",
-    sms_sender_id: "",
-    sms_template_id: "",
+    sms_sender_id: "PREVIEW",
+    sms_template_id: "preview-otp-template",
     google_review_link: "https://g.page/preview-demo/review",
     google_review_prompts_sent: 0,
   };

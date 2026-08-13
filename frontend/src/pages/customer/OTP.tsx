@@ -4,13 +4,17 @@ import { useCustomer } from "@/context/CustomerContext";
 import { postResendOtp, postVerifyOtp, setCustomerScanSession, type OtpDeliveryChannel } from "@/lib/api";
 import { toIndiaE164 } from "@/lib/phoneE164";
 import { resolveScanContext } from "@/lib/scanContext";
-import { buildScanPath } from "@/lib/previewMode";
+import { buildScanPath, isPreviewMode } from "@/lib/previewMode";
 import { useScannerTheme } from "@/lib/useScannerTheme";
 
 const SIMULATED_OTP = "482916";
 
-const SIMULATE_OTP =
-  import.meta.env.DEV && String(import.meta.env.VITE_SIMULATE_OTP || "").toLowerCase() === "true";
+function shouldSimulateOtp(): boolean {
+  return (
+    isPreviewMode() ||
+    (import.meta.env.DEV && String(import.meta.env.VITE_SIMULATE_OTP || "").toLowerCase() === "true")
+  );
+}
 
 const OTP = () => {
   const navigate = useNavigate();
@@ -18,6 +22,7 @@ const OTP = () => {
   const { restaurantId } = useParams<{ restaurantId: string }>();
   const { apiSlug, menuKey } = useMemo(() => resolveScanContext(restaurantId), [restaurantId]);
   const pathSegment = restaurantId || menuKey;
+  const SIMULATE_OTP = shouldSimulateOtp();
   const { theme } = useScannerTheme(apiSlug, menuKey);
   const { customer, setCustomer, addCheckin } = useCustomer();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -42,7 +47,7 @@ const OTP = () => {
     if (!SIMULATE_OTP) return;
     const t = setTimeout(() => setShowSimulated(true), 1500);
     return () => clearTimeout(t);
-  }, []);
+  }, [SIMULATE_OTP]);
 
   useEffect(() => {
     if (countdown <= 0) {

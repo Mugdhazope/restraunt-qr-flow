@@ -11,7 +11,7 @@ import {
   PREVIEW_HUB_PATH,
 } from "@/lib/previewMode";
 import {
-  LayoutDashboard, Users, MessageSquare, Star,
+  LayoutDashboard, Users, MessageSquare, Star, Megaphone, Zap,
   QrCode, BarChart3, Settings, Search, Bell, ChevronDown,
   Menu, X, LogOut, UtensilsCrossed, Upload, Store, LayoutTemplate
 } from "lucide-react";
@@ -38,6 +38,12 @@ const DashboardLayout = () => {
     { label: "Layout Editor", path: dashboardPath("layout"), icon: LayoutTemplate },
     { label: "Feedback", path: dashboardPath("feedback"), icon: MessageSquare },
     { label: "Google Reviews", path: dashboardPath("google-reviews"), icon: Star },
+    ...(preview
+      ? [
+          { label: "WhatsApp Campaigns", path: dashboardPath("campaigns"), icon: Megaphone },
+          { label: "Automations", path: dashboardPath("automations"), icon: Zap },
+        ]
+      : []),
     { label: "QR & Entry Flow", path: dashboardPath("qr-entry"), icon: QrCode },
     { label: "Analytics", path: dashboardPath("analytics"), icon: BarChart3 },
     { label: "Settings", path: dashboardPath("settings"), icon: Settings },

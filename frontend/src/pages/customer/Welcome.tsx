@@ -5,7 +5,7 @@ import { restaurants } from "@/data/menuData";
 import { postCheckIn, setCustomerScanSession } from "@/lib/api";
 import { toIndiaE164 } from "@/lib/phoneE164";
 import { resolveScanContext } from "@/lib/scanContext";
-import { buildScanPath } from "@/lib/previewMode";
+import { buildScanPath, isPreviewMode } from "@/lib/previewMode";
 import { useScannerTheme } from "@/lib/useScannerTheme";
 import { LayoutRenderer } from "@/layouts/LayoutRenderer";
 import { themeWithOutletLogo } from "@/layouts/outletLogo";
@@ -80,7 +80,7 @@ const Welcome = () => {
         visitTimestamp: new Date().toISOString(),
         totalVisits: typeof res.total_visits === "number" ? res.total_visits : undefined,
       });
-      navigate(buildScanPath(pathSegment, "checked-in"));
+      navigate(buildScanPath(pathSegment, isPreviewMode() ? "otp" : "checked-in"));
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
